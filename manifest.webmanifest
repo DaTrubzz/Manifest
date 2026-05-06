@@ -1,0 +1,32 @@
+{
+  "name": "Manifest - Fitness habits",
+  "short_name": "Manifest",
+  "description": "A simple daily fitness habit tracker for workouts, water, sleep, and nutrition. Cross-device sync and AI-agent friendly.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0b0d",
+  "theme_color": "#0b0b0d",
+  "categories": ["health", "fitness", "lifestyle"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" aria-label="Daily app icon">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#34c759"/>
+      <stop offset="100%" stop-color="#2aa9ff"/>
+    </linearGradient>
+    <filter id="soft" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+  </defs>
+
+  <!-- Rounded squircle background -->
+  <rect x="0" y="0" width="512" height="512" rx="112" ry="112" fill="url(#bg)"/>
+
+  <!-- Subtle inner glow -->
+  <rect x="0" y="0" width="512" height="512" rx="112" ry="112"
+        fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="2"/>
+
+  <!-- Stylized check + flame: a simple "D" check mark indicating "done today" -->
+  <g transform="translate(256 264)">
+    <!-- Activity ring -->
+    <circle r="148" cx="0" cy="0" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="22"/>
+    <path d="M 0 -148
+             A 148 148 0 1 1 -104.65 104.65"
+          fill="none" stroke="white" stroke-width="22" stroke-linecap="round"/>
+
+    <!-- Inner check mark -->
+    <path d="M -52 6 L -16 42 L 60 -38"
+          fill="none" stroke="white" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

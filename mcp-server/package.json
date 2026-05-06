@@ -1,0 +1,20 @@
+{
+  "name": "manifest-mcp-server",
+  "version": "1.0.0",
+  "description": "Local MCP server that lets Claude Desktop read and write your Manifest fitness data via Supabase.",
+  "type": "module",
+  "main": "server.js",
+  "bin": {
+    "manifest-mcp": "server.js"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "@supabase/supabase-js": "^2.45.4"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
