@@ -143,7 +143,7 @@
   .seg button { background: transparent; padding: 8px 6px; font-size: 14px; border-radius: 9px; color: var(--text-2); }
   .seg button.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
 
-  input[type="number"], input[type="text"], input[type="password"] {
+  input[type="number"], input[type="text"], input[type="password"], input[type="email"] {
     font-family: inherit; font-size: 15px; border: 1px solid var(--border);
     background: var(--surface); color: var(--text);
     padding: 10px 12px; border-radius: 10px; width: 100%;
@@ -195,238 +195,339 @@
 
   .help-text { font-size: 12px; color: var(--text-3); margin-top: 6px; line-height: 1.4; }
   code.inline { background: var(--surface-2); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+
+  /* ── Auth overlay ─────────────────────────────────────────────────────── */
+  .auth-overlay {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; padding: 20px;
+  }
+  .auth-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 32px 24px;
+    width: 100%; max-width: 380px; box-shadow: var(--shadow);
+  }
+  .auth-logo { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; text-align: center; margin-bottom: 4px; }
+  .auth-subtitle { text-align: center; color: var(--text-2); font-size: 14px; margin-bottom: 20px; }
+  .auth-msg { border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.4; margin-bottom: 4px; }
+  .auth-msg.error { background: rgba(255,59,48,0.1); color: #ff3b30; }
+  .auth-msg.info  { background: rgba(52,199,89,0.1); color: #34c759; }
+  .auth-toggle { text-align: center; font-size: 13px; color: var(--text-2); margin: 12px 0 0; }
+  .auth-toggle .btn-ghost { font-size: 13px; padding: 2px 4px; color: var(--accent); font-weight: 600; }
 </style>
 </head>
 
 <body>
-  <div class="app">
 
-    <!-- TODAY -->
-    <section id="screen-today" class="screen active">
-      <header class="header">
-        <div id="installBanner" class="install-banner" style="display:none;">
-          <button class="close" onclick="dismissInstall()">×</button>
-          <strong>Install Manifest on your iPhone</strong><br>
-          Tap the Share icon in Safari, then choose <em>Add to Home Screen</em>.
-        </div>
-        <div class="greeting" id="greeting">Hi there</div>
-        <div class="date" id="todayDate"></div>
-        <div id="syncPill" class="sync-pill" style="display:none;"><span class="dot"></span><span id="syncStatus">Sync off</span></div>
-      </header>
+<!-- Auth overlay — shown when Supabase is configured but user is not signed in -->
+<div id="authOverlay" class="auth-overlay" style="display:none;">
+  <div class="auth-card">
+    <div class="auth-logo">Manifest</div>
+    <div class="auth-subtitle">Track your fitness habits</div>
+    <div id="authMsg" class="auth-msg" style="display:none;"></div>
 
-      <div class="week-strip" id="weekStrip"></div>
-
-      <div class="cards">
-        <div class="card" id="cardWorkout">
-          <div class="card-row">
-            <div class="card-title">
-              <div class="icon-bubble workout">💪</div>
-              <div>
-                <div class="card-name">Workout</div>
-                <div class="card-sub" id="workoutSub">Not logged yet</div>
-              </div>
-            </div>
-            <div class="streak" id="workoutStreak">0d</div>
-          </div>
-          <div class="btn-row" id="workoutTypes">
-            <button class="btn-pill" data-type="Strength">Strength</button>
-            <button class="btn-pill" data-type="Cardio">Cardio</button>
-            <button class="btn-pill" data-type="Mobility">Mobility</button>
-            <button class="btn-pill" data-type="Other">Other</button>
-            <button class="btn-pill btn-ghost" id="clearWorkout" style="display:none;">Clear</button>
-          </div>
-        </div>
-
-        <div class="card" id="cardWater">
-          <div class="card-row">
-            <div class="card-title">
-              <div class="icon-bubble water">💧</div>
-              <div>
-                <div class="card-name">Water</div>
-                <div class="card-sub" id="waterSub">Goal: 8 glasses</div>
-              </div>
-            </div>
-            <div class="streak" id="waterStreak">0d</div>
-          </div>
-          <div class="water-bar"><div class="water-bar-fill" id="waterFill"></div></div>
-          <div class="water-controls">
-            <div class="water-count">
-              <span id="waterNow">0</span><small> / <span id="waterGoal">8</span></small>
-            </div>
-            <div class="water-buttons">
-              <button class="icon-btn" id="waterMinus">−</button>
-              <button class="icon-btn plus" id="waterPlus">+</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" id="cardSleep">
-          <div class="card-row">
-            <div class="card-title">
-              <div class="icon-bubble sleep">😴</div>
-              <div>
-                <div class="card-name">Sleep</div>
-                <div class="card-sub" id="sleepSub">Tap to log last night</div>
-              </div>
-            </div>
-            <div class="streak" id="sleepStreak">0d</div>
-          </div>
-          <button class="btn btn-block" id="logSleepBtn" style="margin-top:12px;">Log sleep</button>
-        </div>
-
-        <div class="card" id="cardFood">
-          <div class="card-row">
-            <div class="card-title">
-              <div class="icon-bubble food">🥗</div>
-              <div>
-                <div class="card-name">Nutrition</div>
-                <div class="card-sub" id="foodSub">How did you eat today?</div>
-              </div>
-            </div>
-            <div class="streak" id="foodStreak">0d</div>
-          </div>
-          <div class="seg" id="foodSeg">
-            <button data-rating="good">On plan</button>
-            <button data-rating="ok">So-so</button>
-            <button data-rating="off">Off plan</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- HISTORY -->
-    <section id="screen-history" class="screen">
-      <header class="header">
-        <div class="greeting">History</div>
-        <div class="date" id="historyMonth"></div>
-      </header>
-      <div class="stat-row">
-        <div class="stat">
-          <div class="label">Best streak</div>
-          <div class="value"><span id="bestStreak">0</span><small style="font-size:14px;color:var(--text-2);"> days</small></div>
-        </div>
-        <div class="stat">
-          <div class="label">Days logged (30d)</div>
-          <div class="value" id="daysLogged">0</div>
-        </div>
-      </div>
-      <h2 class="section">Last 30 days</h2>
-      <div class="history-grid" id="historyGrid"></div>
-      <div class="legend">
-        <span><span class="dot" style="background:var(--accent)"></span>All 4 done</span>
-        <span><span class="dot" style="background:var(--food)"></span>Some done</span>
-      </div>
-    </section>
-
-    <!-- SETTINGS -->
-    <section id="screen-settings" class="screen">
-      <header class="header">
-        <div class="greeting">Settings</div>
-        <div class="date">Tune your goals & sync</div>
-      </header>
-
-      <h2 class="section">Goals</h2>
-      <div class="card">
-        <label class="field">
-          <span>Your name (for the greeting)</span>
-          <input type="text" id="setName" placeholder="Sam" />
-        </label>
-        <label class="field">
-          <span>Daily water goal (glasses)</span>
-          <input type="number" id="setWaterGoal" min="1" max="30" />
-        </label>
-        <label class="field">
-          <span>Daily sleep goal (hours)</span>
-          <input type="number" id="setSleepGoal" min="3" max="14" step="0.5" />
-        </label>
-        <div class="btn-row">
-          <button class="btn btn-primary" id="saveSettings">Save</button>
-        </div>
-      </div>
-
-      <h2 class="section">Cross-device sync</h2>
-      <div class="card">
-        <label class="field">
-          <span>Supabase project URL</span>
-          <input type="text" id="setSupabaseUrl" placeholder="https://xxxx.supabase.co" autocomplete="off" />
-        </label>
-        <label class="field">
-          <span>Supabase anon key</span>
-          <input type="password" id="setSupabaseKey" placeholder="eyJh..." autocomplete="off" />
-        </label>
-        <label class="field">
-          <span>Sync code (use the same on every device)</span>
-          <input type="text" id="setSyncCode" placeholder="auto-generated on first save" autocomplete="off" />
-          <div class="help-text">A random 12-char string. Copy this exact value into Manifest on your other devices to share data.</div>
-        </label>
-        <div class="btn-row">
-          <button class="btn btn-primary" id="saveSync">Enable sync</button>
-          <button class="btn" id="generateSyncCode">Generate code</button>
-          <button class="btn btn-ghost" id="disableSync">Disable</button>
-        </div>
-      </div>
-
-      <h2 class="section">Data</h2>
-      <div class="card">
-        <button class="btn btn-block" id="exportData">Export data (JSON)</button>
-        <div style="height:8px"></div>
-        <button class="btn btn-block" style="background:#ff3b30;color:white;" id="resetData">Reset all data</button>
-      </div>
-
-      <h2 class="section">For developers / agents</h2>
-      <div class="card" style="font-size:13px; color:var(--text-2); line-height:1.55;">
-        Manifest exposes a <code class="inline">window.manifest</code> command bus and supports URL deep links so AI agents and Shortcuts can drive it. See the README for the full reference.
-      </div>
-    </section>
-
-  </div>
-
-  <!-- Sleep sheet -->
-  <div class="sheet-backdrop" id="sleepSheet">
-    <div class="sheet">
-      <div class="sheet-header">
-        <div class="sheet-title">Log sleep</div>
-        <button class="sheet-close" id="closeSleepSheet">Close</button>
-      </div>
-      <label class="field">
-        <span>Hours slept</span>
-        <input type="number" id="sleepHours" min="0" max="14" step="0.5" />
+    <div id="authSignInForm">
+      <label class="field"><span>Email</span>
+        <input type="email" id="authEmail" autocomplete="email" placeholder="you@example.com" />
       </label>
-      <label class="field"><span>Quality</span></label>
-      <div class="star-row" id="sleepStars">
-        <div class="star" data-q="1">★</div>
-        <div class="star" data-q="2">★</div>
-        <div class="star" data-q="3">★</div>
-        <div class="star" data-q="4">★</div>
-        <div class="star" data-q="5">★</div>
+      <label class="field"><span>Password</span>
+        <input type="password" id="authPassword" autocomplete="current-password" placeholder="••••••••" />
+      </label>
+      <div class="btn-row" style="margin-top:16px;">
+        <button class="btn btn-primary btn-block" id="authSignInBtn">Sign in</button>
       </div>
-      <div class="btn-row">
-        <button class="btn btn-primary btn-block" id="saveSleep">Save</button>
+      <p class="auth-toggle">No account? <button class="btn btn-ghost" id="authShowSignUp">Sign up</button></p>
+    </div>
+
+    <div id="authSignUpForm" style="display:none;">
+      <label class="field"><span>Email</span>
+        <input type="email" id="signUpEmail" autocomplete="email" placeholder="you@example.com" />
+      </label>
+      <label class="field"><span>Password</span>
+        <input type="password" id="signUpPassword" autocomplete="new-password" placeholder="6+ characters" />
+      </label>
+      <div class="btn-row" style="margin-top:16px;">
+        <button class="btn btn-primary btn-block" id="authSignUpBtn">Create account</button>
       </div>
+      <p class="auth-toggle">Have an account? <button class="btn btn-ghost" id="authShowSignIn">Sign in</button></p>
     </div>
   </div>
+</div>
 
-  <nav class="nav">
-    <div class="nav-inner">
-      <button class="nav-btn active" data-screen="today"><span class="glyph">●</span><span>Today</span></button>
-      <button class="nav-btn" data-screen="history"><span class="glyph">▦</span><span>History</span></button>
-      <button class="nav-btn" data-screen="settings"><span class="glyph">⚙︎</span><span>Settings</span></button>
+<div class="app">
+
+  <!-- TODAY -->
+  <section id="screen-today" class="screen active">
+    <header class="header">
+      <div id="installBanner" class="install-banner" style="display:none;">
+        <button class="close" onclick="dismissInstall()">×</button>
+        <strong>Install Manifest on your iPhone</strong><br>
+        Tap the Share icon in Safari, then choose <em>Add to Home Screen</em>.
+      </div>
+      <div class="greeting" id="greeting">Hi there</div>
+      <div class="date" id="todayDate"></div>
+      <div id="syncPill" class="sync-pill" style="display:none;"><span class="dot"></span><span id="syncStatus">Sync off</span></div>
+    </header>
+
+    <div class="week-strip" id="weekStrip"></div>
+
+    <div class="cards">
+      <div class="card" id="cardWorkout">
+        <div class="card-row">
+          <div class="card-title">
+            <div class="icon-bubble workout">💪</div>
+            <div>
+              <div class="card-name">Workout</div>
+              <div class="card-sub" id="workoutSub">Not logged yet</div>
+            </div>
+          </div>
+          <div class="streak" id="workoutStreak">0d</div>
+        </div>
+        <div class="btn-row" id="workoutTypes">
+          <button class="btn-pill" data-type="Strength">Strength</button>
+          <button class="btn-pill" data-type="Cardio">Cardio</button>
+          <button class="btn-pill" data-type="Mobility">Mobility</button>
+          <button class="btn-pill" data-type="Other">Other</button>
+          <button class="btn-pill btn-ghost" id="clearWorkout" style="display:none;">Clear</button>
+        </div>
+      </div>
+
+      <div class="card" id="cardWater">
+        <div class="card-row">
+          <div class="card-title">
+            <div class="icon-bubble water">💧</div>
+            <div>
+              <div class="card-name">Water</div>
+              <div class="card-sub" id="waterSub">Goal: 8 glasses</div>
+            </div>
+          </div>
+          <div class="streak" id="waterStreak">0d</div>
+        </div>
+        <div class="water-bar"><div class="water-bar-fill" id="waterFill"></div></div>
+        <div class="water-controls">
+          <div class="water-count">
+            <span id="waterNow">0</span><small> / <span id="waterGoal">8</span></small>
+          </div>
+          <div class="water-buttons">
+            <button class="icon-btn" id="waterMinus">−</button>
+            <button class="icon-btn plus" id="waterPlus">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="cardSleep">
+        <div class="card-row">
+          <div class="card-title">
+            <div class="icon-bubble sleep">😴</div>
+            <div>
+              <div class="card-name">Sleep</div>
+              <div class="card-sub" id="sleepSub">Tap to log last night</div>
+            </div>
+          </div>
+          <div class="streak" id="sleepStreak">0d</div>
+        </div>
+        <button class="btn btn-block" id="logSleepBtn" style="margin-top:12px;">Log sleep</button>
+      </div>
+
+      <div class="card" id="cardFood">
+        <div class="card-row">
+          <div class="card-title">
+            <div class="icon-bubble food">🥗</div>
+            <div>
+              <div class="card-name">Nutrition</div>
+              <div class="card-sub" id="foodSub">How did you eat today?</div>
+            </div>
+          </div>
+          <div class="streak" id="foodStreak">0d</div>
+        </div>
+        <div class="seg" id="foodSeg">
+          <button data-rating="good">On plan</button>
+          <button data-rating="ok">So-so</button>
+          <button data-rating="off">Off plan</button>
+        </div>
+      </div>
     </div>
-  </nav>
+  </section>
+
+  <!-- HISTORY -->
+  <section id="screen-history" class="screen">
+    <header class="header">
+      <div class="greeting">History</div>
+      <div class="date" id="historyMonth"></div>
+    </header>
+    <div class="stat-row">
+      <div class="stat">
+        <div class="label">Best streak</div>
+        <div class="value"><span id="bestStreak">0</span><small style="font-size:14px;color:var(--text-2);"> days</small></div>
+      </div>
+      <div class="stat">
+        <div class="label">Days logged (30d)</div>
+        <div class="value" id="daysLogged">0</div>
+      </div>
+    </div>
+    <h2 class="section">Last 30 days</h2>
+    <div class="history-grid" id="historyGrid"></div>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--accent)"></span>All 4 done</span>
+      <span><span class="dot" style="background:var(--food)"></span>Some done</span>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="screen-settings" class="screen">
+    <header class="header">
+      <div class="greeting">Settings</div>
+      <div class="date">Tune your goals & sync</div>
+    </header>
+
+    <h2 class="section">Goals</h2>
+    <div class="card">
+      <label class="field">
+        <span>Your name (for the greeting)</span>
+        <input type="text" id="setName" placeholder="Sam" />
+      </label>
+      <label class="field">
+        <span>Daily water goal (glasses)</span>
+        <input type="number" id="setWaterGoal" min="1" max="30" />
+      </label>
+      <label class="field">
+        <span>Daily sleep goal (hours)</span>
+        <input type="number" id="setSleepGoal" min="3" max="14" step="0.5" />
+      </label>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="saveSettings">Save</button>
+      </div>
+    </div>
+
+    <h2 class="section">Account & sync</h2>
+
+    <!-- Shown when Supabase is not configured -->
+    <div class="card" id="syncConfigCard">
+      <p class="help-text" style="margin:0 0 8px;">Connect your Supabase project to enable accounts and cross-device sync.</p>
+      <label class="field">
+        <span>Supabase project URL</span>
+        <input type="text" id="setSupabaseUrl" placeholder="https://xxxx.supabase.co" autocomplete="off" />
+      </label>
+      <label class="field">
+        <span>Supabase anon key</span>
+        <input type="password" id="setSupabaseKey" placeholder="eyJh..." autocomplete="off" />
+      </label>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="connectBtn">Connect</button>
+      </div>
+    </div>
+
+    <!-- Shown when Supabase is configured -->
+    <div class="card" id="syncAccountCard" style="display:none;">
+      <div id="accountStatus" style="font-size:14px;color:var(--text-2);margin-bottom:8px;"></div>
+
+      <!-- Sign in / sign up (shown when not signed in) -->
+      <div id="authFormSection">
+        <div id="settingsSignInSection">
+          <label class="field"><span>Email</span>
+            <input type="email" id="settingsEmail" autocomplete="email" />
+          </label>
+          <label class="field"><span>Password</span>
+            <input type="password" id="settingsPassword" autocomplete="current-password" />
+          </label>
+          <div id="settingsSignInMsg" class="auth-msg" style="display:none;"></div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="settingsSignInBtn">Sign in</button>
+            <button class="btn btn-ghost" id="settingsShowSignUp">Create account</button>
+          </div>
+        </div>
+        <div id="settingsSignUpSection" style="display:none;">
+          <label class="field"><span>Email</span>
+            <input type="email" id="settingsSignUpEmail" autocomplete="email" />
+          </label>
+          <label class="field"><span>Password</span>
+            <input type="password" id="settingsSignUpPwd" autocomplete="new-password" />
+          </label>
+          <div id="settingsSignUpMsg" class="auth-msg" style="display:none;"></div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="settingsSignUpBtn">Create account</button>
+            <button class="btn btn-ghost" id="settingsShowSignIn">Sign in instead</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Shown when signed in -->
+      <div id="signedInSection" style="display:none;">
+        <div class="btn-row">
+          <button class="btn" id="signOutBtn">Sign out</button>
+          <button class="btn btn-ghost" id="disconnectBtn" style="display:none;">Disconnect</button>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section">Data</h2>
+    <div class="card">
+      <button class="btn btn-block" id="exportData">Export data (JSON)</button>
+      <div style="height:8px"></div>
+      <button class="btn btn-block" style="background:#ff3b30;color:white;" id="resetData">Reset all data</button>
+    </div>
+
+    <h2 class="section">For developers / agents</h2>
+    <div class="card" style="font-size:13px; color:var(--text-2); line-height:1.55;">
+      Manifest exposes a <code class="inline">window.manifest</code> command bus and supports URL deep links so AI agents and Shortcuts can drive it. See the README for the full reference.
+    </div>
+  </section>
+
+</div>
+
+<!-- Sleep sheet -->
+<div class="sheet-backdrop" id="sleepSheet">
+  <div class="sheet">
+    <div class="sheet-header">
+      <div class="sheet-title">Log sleep</div>
+      <button class="sheet-close" id="closeSleepSheet">Close</button>
+    </div>
+    <label class="field">
+      <span>Hours slept</span>
+      <input type="number" id="sleepHours" min="0" max="14" step="0.5" />
+    </label>
+    <label class="field"><span>Quality</span></label>
+    <div class="star-row" id="sleepStars">
+      <div class="star" data-q="1">★</div>
+      <div class="star" data-q="2">★</div>
+      <div class="star" data-q="3">★</div>
+      <div class="star" data-q="4">★</div>
+      <div class="star" data-q="5">★</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary btn-block" id="saveSleep">Save</button>
+    </div>
+  </div>
+</div>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <button class="nav-btn active" data-screen="today"><span class="glyph">●</span><span>Today</span></button>
+    <button class="nav-btn" data-screen="history"><span class="glyph">▦</span><span>History</span></button>
+    <button class="nav-btn" data-screen="settings"><span class="glyph">⚙︎</span><span>Settings</span></button>
+  </div>
+</nav>
 
 <script>
 /* ============================================================
    Manifest — Fitness habits PWA
-   - LocalStorage-first, optional Supabase sync.
+   - LocalStorage-first, Supabase sync with email/password auth.
    - Exposes window.manifest command bus for agents.
    - Handles ?action=... URL deep links.
 ============================================================ */
+
+// ── Supabase config ────────────────────────────────────────────────────────
+// To make sign-up work for anyone who visits your deployed URL, fill these in
+// with your project values and redeploy. The anon key is safe to commit.
+const SUPABASE_URL = "https://ablwnzpllekdtxnmurax.supabase.co";
+const SUPABASE_KEY = "sb_publishable_4BWYlRVGmdlm_B3e2iEg0g_704GJL1T";
+// ──────────────────────────────────────────────────────────────────────────
 
 const KEY = "manifest.v1";
 const DEFAULTS = {
   settings: {
     name: "", waterGoal: 8, sleepGoal: 8, installDismissed: false,
-    sync: { url: "", key: "", code: "", enabled: false }
+    sync: { url: "", key: "" }
   },
   days: {}
 };
@@ -434,7 +535,6 @@ const DEFAULTS = {
 function load() {
   try {
     const raw = localStorage.getItem(KEY);
-    // Migrate from "daily.v1" if present (in case Sam tried the old build)
     const fallbackRaw = !raw ? localStorage.getItem("daily.v1") : null;
     const source = raw || fallbackRaw;
     if (!source) return structuredClone(DEFAULTS);
@@ -468,7 +568,6 @@ function fmtLong(d) { return d.toLocaleDateString(undefined, { weekday: "long", 
 function getDay(key) { return state.days[key] || {}; }
 function setDay(key, patch) {
   const merged = { ...getDay(key), ...patch };
-  // Clean up undefined values so storage stays tidy
   Object.keys(merged).forEach(k => merged[k] === undefined && delete merged[k]);
   state.days[key] = merged;
   save();
@@ -516,32 +615,107 @@ function bestStreakOverall() {
 }
 
 /* ===========================================================
-   SUPABASE SYNC (optional)
-   - Lazy-loads supabase-js from CDN only when sync is enabled.
-   - Whole state lives in one JSONB row, keyed by sync_code.
-   - Last-write-wins by updated_at.
+   SUPABASE SYNC — email/password auth, one row per user.
 =========================================================== */
 let _sb = null;
 let _pushTimer = null;
 let _pullTimer = null;
+let _session = null;
+
+function resolvedConfig() {
+  return {
+    url: SUPABASE_URL || state.settings.sync.url,
+    key: SUPABASE_KEY || state.settings.sync.key,
+  };
+}
 
 async function getSupabase() {
-  const s = state.settings.sync;
-  if (!s.enabled || !s.url || !s.key) return null;
+  const { url, key } = resolvedConfig();
+  if (!url || !key) return null;
   if (_sb) return _sb;
   try {
     const mod = await import("https://esm.sh/@supabase/supabase-js@2");
-    _sb = mod.createClient(s.url, s.key, { auth: { persistSession: false } });
+    _sb = mod.createClient(url, key, {
+      auth: { persistSession: true, autoRefreshToken: true }
+    });
     return _sb;
   } catch (e) {
     console.warn("Failed to load Supabase:", e);
-    setSyncStatus("err", "Sync library failed to load");
+    setSyncStatus("err", "Sync library failed");
     return null;
   }
 }
 
+/* ── Auth ── */
+
+async function initAuth() {
+  const sb = await getSupabase();
+  if (!sb) { renderAuthState(); return; }
+
+  const { data: { session } } = await sb.auth.getSession();
+  _session = session;
+  if (session) {
+    startSyncLoop();
+  } else {
+    const { url } = resolvedConfig();
+    if (url) document.getElementById("authOverlay").style.display = "flex";
+  }
+  renderAuthState();
+
+  sb.auth.onAuthStateChange((event, session) => {
+    _session = session;
+    if (event === "SIGNED_IN") {
+      document.getElementById("authOverlay").style.display = "none";
+      startSyncLoop();
+      render();
+    } else if (event === "SIGNED_OUT") {
+      clearInterval(_pullTimer);
+      setSyncStatus("", "");
+    }
+    renderAuthState();
+  });
+}
+
+function renderAuthState() {
+  const { url, key } = resolvedConfig();
+  const configured = !!(url && key);
+  document.getElementById("syncConfigCard").style.display = configured ? "none" : "";
+  document.getElementById("syncAccountCard").style.display = configured ? "" : "none";
+
+  if (!configured) {
+    document.getElementById("setSupabaseUrl").value = state.settings.sync.url || "";
+    document.getElementById("setSupabaseKey").value = state.settings.sync.key || "";
+    return;
+  }
+
+  const signedIn = !!_session;
+  document.getElementById("authFormSection").style.display = signedIn ? "none" : "";
+  document.getElementById("signedInSection").style.display = signedIn ? "" : "none";
+  document.getElementById("accountStatus").textContent = signedIn
+    ? `Signed in as ${_session.user.email}`
+    : "Sign in to sync across devices";
+
+  // Show disconnect only when config is from settings (not hardcoded constants)
+  document.getElementById("disconnectBtn").style.display =
+    (!SUPABASE_URL && state.settings.sync.url) ? "" : "none";
+}
+
+function showMsg(elId, text, type = "error") {
+  const el = document.getElementById(elId);
+  el.textContent = text;
+  el.className = `auth-msg ${type}`;
+  el.style.display = "";
+}
+function clearMsg(elId) {
+  const el = document.getElementById(elId);
+  el.style.display = "none";
+  el.textContent = "";
+}
+
+/* ── Sync ── */
+
 function schedulePush() {
-  if (!state.settings.sync.enabled) return;
+  if (!_session) return;
   clearTimeout(_pushTimer);
   setSyncStatus("busy", "Saving…");
   _pushTimer = setTimeout(pushNow, 1500);
@@ -549,16 +723,22 @@ function schedulePush() {
 
 async function pushNow() {
   const sb = await getSupabase();
-  if (!sb) return;
-  const code = state.settings.sync.code;
-  if (!code) return;
+  if (!sb || !_session) return;
   try {
     const payload = {
-      sync_code: code,
-      data: { settings: { ...state.settings, sync: undefined }, days: state.days },
+      user_id: _session.user.id,
+      data: {
+        settings: {
+          name: state.settings.name,
+          waterGoal: state.settings.waterGoal,
+          sleepGoal: state.settings.sleepGoal,
+          installDismissed: state.settings.installDismissed,
+        },
+        days: state.days
+      },
       updated_at: new Date().toISOString()
     };
-    const { error } = await sb.from("manifest_data").upsert(payload, { onConflict: "sync_code" });
+    const { error } = await sb.from("manifest_data").upsert(payload, { onConflict: "user_id" });
     if (error) throw error;
     setSyncStatus("ok", "Synced");
   } catch (e) {
@@ -569,19 +749,20 @@ async function pushNow() {
 
 async function pullNow() {
   const sb = await getSupabase();
-  if (!sb) return;
-  const code = state.settings.sync.code;
-  if (!code) return;
+  if (!sb || !_session) return;
   try {
     setSyncStatus("busy", "Syncing…");
     const { data, error } = await sb.from("manifest_data")
-      .select("data, updated_at").eq("sync_code", code).maybeSingle();
+      .select("data, updated_at").eq("user_id", _session.user.id).maybeSingle();
     if (error) throw error;
-    if (!data) { setSyncStatus("ok", "Synced (empty)"); return; }
+    if (!data) {
+      // No remote data yet — push local data up on first sync
+      await pushNow();
+      return;
+    }
     const remote = data.data || {};
     const remoteTs = new Date(data.updated_at).getTime();
     const localTs = state.lastLocalUpdate || 0;
-    // Merge: remote wins if remote is newer, else keep local.
     if (remoteTs > localTs) {
       state.days = remote.days || {};
       state.settings = {
@@ -601,7 +782,8 @@ async function pullNow() {
 
 function startSyncLoop() {
   clearInterval(_pullTimer);
-  if (!state.settings.sync.enabled) return;
+  if (!_session) return;
+  setSyncStatus("busy", "Connecting…");
   pullNow();
   _pullTimer = setInterval(pullNow, 30_000);
 }
@@ -609,7 +791,7 @@ function startSyncLoop() {
 function setSyncStatus(cls, text) {
   const pill = document.getElementById("syncPill");
   const status = document.getElementById("syncStatus");
-  if (!state.settings.sync.enabled) { pill.style.display = "none"; return; }
+  if (!_session) { pill.style.display = "none"; return; }
   pill.style.display = "inline-flex";
   pill.classList.remove("ok", "err", "busy");
   if (cls) pill.classList.add(cls);
@@ -618,11 +800,8 @@ function setSyncStatus(cls, text) {
 
 /* ===========================================================
    COMMAND BUS — window.manifest
-   Anything in the browser context (DevTools, browser extensions,
-   Claude in Chrome, userscripts) can call these.
 =========================================================== */
 window.manifest = {
-  // Reads
   getState() { return JSON.parse(JSON.stringify(state)); },
   getToday() {
     const tk = todayKey();
@@ -651,8 +830,6 @@ window.manifest = {
     }
     return out;
   },
-
-  // Writes (return the resulting today snapshot)
   logWorkout(type, note) {
     const valid = ["Strength","Cardio","Mobility","Other"];
     if (!valid.includes(type)) throw new Error(`Invalid workout type. Try: ${valid.join(", ")}`);
@@ -694,8 +871,7 @@ window.manifest = {
 };
 
 /* ===========================================================
-   URL DEEP LINKS  — e.g. ?action=water&n=2  →  log 2 glasses
-   Handy for iOS Shortcuts and any tool that can open a URL.
+   URL DEEP LINKS
 =========================================================== */
 function handleDeepLink() {
   const p = new URLSearchParams(location.search);
@@ -713,7 +889,6 @@ function handleDeepLink() {
         window.manifest.logNutrition(p.get("rating") || "good"); break;
     }
     flash(`Action: ${action}`);
-    // Strip the query so reloads don't repeat the action
     history.replaceState({}, "", location.pathname);
   } catch (e) { console.warn("Deep-link error:", e); }
 }
@@ -793,9 +968,6 @@ function render() {
   document.getElementById("setName").value = state.settings.name || "";
   document.getElementById("setWaterGoal").value = state.settings.waterGoal;
   document.getElementById("setSleepGoal").value = state.settings.sleepGoal;
-  document.getElementById("setSupabaseUrl").value = state.settings.sync.url || "";
-  document.getElementById("setSupabaseKey").value = state.settings.sync.key || "";
-  document.getElementById("setSyncCode").value = state.settings.sync.code || "";
 }
 function renderHistory() {
   const today = new Date();
@@ -876,13 +1048,14 @@ function bind() {
     });
   });
 
-  // settings
+  // goals
   document.getElementById("saveSettings").addEventListener("click", () => {
     state.settings.name = document.getElementById("setName").value.trim();
     state.settings.waterGoal = Math.max(1, parseInt(document.getElementById("setWaterGoal").value) || 8);
     state.settings.sleepGoal = Math.max(3, parseFloat(document.getElementById("setSleepGoal").value) || 8);
     save(); render(); flash("Saved");
   });
+
   document.getElementById("exportData").addEventListener("click", () => {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -898,39 +1071,120 @@ function bind() {
     }
   });
 
-  // sync settings
-  document.getElementById("generateSyncCode").addEventListener("click", () => {
-    document.getElementById("setSyncCode").value = randomCode();
-  });
-  document.getElementById("saveSync").addEventListener("click", async () => {
+  // ── Supabase connect ──
+  document.getElementById("connectBtn").addEventListener("click", async () => {
     const url = document.getElementById("setSupabaseUrl").value.trim();
     const key = document.getElementById("setSupabaseKey").value.trim();
-    let code = document.getElementById("setSyncCode").value.trim();
-    if (!url || !key) { alert("Please paste your Supabase URL and anon key."); return; }
-    if (!code) { code = randomCode(); document.getElementById("setSyncCode").value = code; }
-    state.settings.sync = { url, key, code, enabled: true };
+    if (!url || !key) { alert("Please enter your Supabase URL and anon key."); return; }
+    state.settings.sync = { url, key };
     save();
-    _sb = null; // force re-init with new creds
-    setSyncStatus("busy", "Connecting…");
-    await pullNow(); // pull once to merge
-    startSyncLoop();
-    flash("Sync enabled");
+    _sb = null; // force re-init
+    renderAuthState();
+    await initAuth();
   });
-  document.getElementById("disableSync").addEventListener("click", () => {
-    state.settings.sync.enabled = false;
-    save();
-    clearInterval(_pullTimer);
-    setSyncStatus("", "Sync off");
-    document.getElementById("syncPill").style.display = "none";
-    flash("Sync disabled");
-  });
-}
 
-function randomCode() {
-  const chars = "abcdefghjkmnpqrstuvwxyz23456789";
-  let out = "";
-  for (let i = 0; i < 12; i++) out += chars[Math.floor(Math.random() * chars.length)];
-  return out;
+  // ── Auth overlay ──
+  document.getElementById("authShowSignUp").addEventListener("click", () => {
+    document.getElementById("authSignInForm").style.display = "none";
+    document.getElementById("authSignUpForm").style.display = "";
+    clearMsg("authMsg");
+  });
+  document.getElementById("authShowSignIn").addEventListener("click", () => {
+    document.getElementById("authSignUpForm").style.display = "none";
+    document.getElementById("authSignInForm").style.display = "";
+    clearMsg("authMsg");
+  });
+
+  document.getElementById("authSignInBtn").addEventListener("click", async () => {
+    const sb = await getSupabase();
+    if (!sb) return;
+    const email = document.getElementById("authEmail").value.trim();
+    const password = document.getElementById("authPassword").value;
+    if (!email || !password) { showMsg("authMsg", "Please enter your email and password."); return; }
+    document.getElementById("authSignInBtn").disabled = true;
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    document.getElementById("authSignInBtn").disabled = false;
+    if (error) { showMsg("authMsg", error.message); return; }
+    clearMsg("authMsg");
+  });
+
+  document.getElementById("authSignUpBtn").addEventListener("click", async () => {
+    const sb = await getSupabase();
+    if (!sb) return;
+    const email = document.getElementById("signUpEmail").value.trim();
+    const password = document.getElementById("signUpPassword").value;
+    if (!email || !password) { showMsg("authMsg", "Please enter your email and password."); return; }
+    if (password.length < 6) { showMsg("authMsg", "Password must be at least 6 characters."); return; }
+    document.getElementById("authSignUpBtn").disabled = true;
+    const { data, error } = await sb.auth.signUp({ email, password });
+    document.getElementById("authSignUpBtn").disabled = false;
+    if (error) { showMsg("authMsg", error.message); return; }
+    if (data.session) {
+      clearMsg("authMsg"); // signed in immediately (email confirm disabled)
+    } else {
+      showMsg("authMsg", "Check your email and click the confirmation link, then sign in.", "info");
+      document.getElementById("authSignUpForm").style.display = "none";
+      document.getElementById("authSignInForm").style.display = "";
+    }
+  });
+
+  // ── Settings auth forms ──
+  document.getElementById("settingsShowSignUp").addEventListener("click", () => {
+    document.getElementById("settingsSignInSection").style.display = "none";
+    document.getElementById("settingsSignUpSection").style.display = "";
+  });
+  document.getElementById("settingsShowSignIn").addEventListener("click", () => {
+    document.getElementById("settingsSignUpSection").style.display = "none";
+    document.getElementById("settingsSignInSection").style.display = "";
+  });
+
+  document.getElementById("settingsSignInBtn").addEventListener("click", async () => {
+    const sb = await getSupabase();
+    if (!sb) return;
+    const email = document.getElementById("settingsEmail").value.trim();
+    const password = document.getElementById("settingsPassword").value;
+    if (!email || !password) { showMsg("settingsSignInMsg", "Please enter your email and password."); return; }
+    document.getElementById("settingsSignInBtn").disabled = true;
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    document.getElementById("settingsSignInBtn").disabled = false;
+    if (error) { showMsg("settingsSignInMsg", error.message); return; }
+    clearMsg("settingsSignInMsg");
+    flash("Signed in");
+  });
+
+  document.getElementById("settingsSignUpBtn").addEventListener("click", async () => {
+    const sb = await getSupabase();
+    if (!sb) return;
+    const email = document.getElementById("settingsSignUpEmail").value.trim();
+    const password = document.getElementById("settingsSignUpPwd").value;
+    if (!email || !password) { showMsg("settingsSignUpMsg", "Please enter your email and password."); return; }
+    if (password.length < 6) { showMsg("settingsSignUpMsg", "Password must be at least 6 characters."); return; }
+    document.getElementById("settingsSignUpBtn").disabled = true;
+    const { data, error } = await sb.auth.signUp({ email, password });
+    document.getElementById("settingsSignUpBtn").disabled = false;
+    if (error) { showMsg("settingsSignUpMsg", error.message); return; }
+    if (data.session) {
+      clearMsg("settingsSignUpMsg"); flash("Account created");
+    } else {
+      showMsg("settingsSignUpMsg", "Check your email for a confirmation link.", "info");
+    }
+  });
+
+  document.getElementById("signOutBtn").addEventListener("click", async () => {
+    const sb = await getSupabase();
+    if (sb) await sb.auth.signOut();
+    flash("Signed out");
+  });
+
+  document.getElementById("disconnectBtn").addEventListener("click", async () => {
+    const sb = await getSupabase();
+    if (sb) await sb.auth.signOut();
+    state.settings.sync = { url: "", key: "" };
+    save();
+    _sb = null;
+    renderAuthState();
+    flash("Disconnected");
+  });
 }
 
 function flash(msg) {
@@ -971,7 +1225,7 @@ bind();
 render();
 maybeShowInstall();
 handleDeepLink();
-if (state.settings.sync.enabled) { setSyncStatus("busy", "Connecting…"); startSyncLoop(); }
+initAuth();
 setInterval(() => render(), 60_000);
 </script>
 </body>
