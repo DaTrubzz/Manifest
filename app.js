@@ -534,13 +534,21 @@ function bind() {
     sheet.classList.remove("open");
   });
 
-  // nav
-  document.querySelectorAll(".nav-btn").forEach(b => {
-    b.addEventListener("click", () => {
-      document.querySelectorAll(".nav-btn").forEach(x => x.classList.remove("active"));
-      b.classList.add("active");
+  // hamburger menu
+  const menuBtn = document.getElementById("menuBtn");
+  const menuDropdown = document.getElementById("menuDropdown");
+  menuBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    menuDropdown.classList.toggle("open");
+  });
+  document.addEventListener("click", () => menuDropdown.classList.remove("open"));
+  document.querySelectorAll(".menu-item").forEach(item => {
+    item.addEventListener("click", () => {
       document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-      document.getElementById("screen-" + b.dataset.screen).classList.add("active");
+      document.getElementById("screen-" + item.dataset.screen).classList.add("active");
+      document.querySelectorAll(".menu-item").forEach(x => x.classList.remove("active"));
+      item.classList.add("active");
+      menuDropdown.classList.remove("open");
       window.scrollTo(0, 0);
     });
   });
