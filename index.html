@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
 <link rel="manifest" href="manifest.webmanifest" />
-<link rel="stylesheet" href="styles.css?v=5" />
+<link rel="stylesheet" href="styles.css?v=6" />
 </head>
 
 <body>
@@ -82,7 +82,7 @@
 
     <div class="week-strip" id="weekStrip"></div>
 
-    <div class="cards">
+    <div class="cards" id="cat-health">
       <div class="card" id="cardWorkout">
         <div class="card-row">
           <div class="card-title">
@@ -158,6 +158,11 @@
         </div>
       </div>
     </div>
+
+    <div class="cards" id="cat-lifestyle" style="display:none;">
+      <div class="cat-empty">Lifestyle habits coming soon.<br>This is where things like mindfulness,<br>journaling, and screen time will live.</div>
+    </div>
+
   </section>
 
   <!-- HISTORY -->
@@ -346,6 +351,13 @@
 </div>
 
 
-<script src="app.js?v=5"></script>
+<nav class="cat-bar">
+  <div class="cat-bar-inner">
+    <button class="cat-btn active" data-cat="health"><span class="cat-icon">❤️</span>Health</button>
+    <button class="cat-btn" data-cat="lifestyle"><span class="cat-icon">✨</span>Lifestyle</button>
+  </div>
+</nav>
+
+<script src="app.js?v=6"></script>
 </body>
 </html>

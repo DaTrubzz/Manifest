@@ -534,6 +534,16 @@ function bind() {
     sheet.classList.remove("open");
   });
 
+  // category bar
+  document.querySelectorAll(".cat-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("cat-health").style.display = btn.dataset.cat === "health" ? "" : "none";
+      document.getElementById("cat-lifestyle").style.display = btn.dataset.cat === "lifestyle" ? "" : "none";
+    });
+  });
+
   // hamburger menu
   const menuBtn = document.getElementById("menuBtn");
   const menuDropdown = document.getElementById("menuDropdown");
