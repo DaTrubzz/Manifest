@@ -506,7 +506,7 @@ function renderTimeline() {
 
   const tasks = (state.tasks || []).filter(t => t.date === today);
 
-  const START_HOUR = 5;   // 5 am
+  const START_HOUR = 0;   // 12 am
   const END_HOUR   = 23;  // 11 pm (inclusive)
   const HOUR_PX    = 60;  // px per hour (= 1 px per minute)
 
