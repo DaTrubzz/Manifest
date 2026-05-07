@@ -534,16 +534,17 @@ function bind() {
     sheet.classList.remove("open");
   });
 
-  // category bar (bottom)
+  // category bar (bottom) — generic, no hardcoding needed for new tabs
   document.querySelectorAll(".cat-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const cat = btn.dataset.cat;
       document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-      document.getElementById("cat-health").style.display = cat === "health" ? "" : "none";
-      document.getElementById("cat-lifestyle").style.display = cat === "lifestyle" ? "" : "none";
-      document.getElementById("subtabs-health").style.display = cat === "health" ? "" : "none";
-      document.getElementById("subtabs-lifestyle").style.display = cat === "lifestyle" ? "" : "none";
+      document.querySelectorAll("[id^='cat-']").forEach(el => el.style.display = "none");
+      document.querySelectorAll("[id^='subtabs-']").forEach(el => el.style.display = "none");
+      document.getElementById(`cat-${cat}`).style.display = "";
+      const subtabs = document.getElementById(`subtabs-${cat}`);
+      if (subtabs) subtabs.style.display = "";
     });
   });
 
