@@ -2,7 +2,7 @@
    Caches the app shell so the app works offline once visited.
    Bump CACHE_VERSION when you ship updates so clients refresh. */
 
-const CACHE_VERSION = "manifest-v4";
+const CACHE_VERSION = "manifest-v5";
 const APP_SHELL = [
   "./",
   "./index.html",
