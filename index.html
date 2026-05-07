@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
 <link rel="manifest" href="manifest.webmanifest" />
-<link rel="stylesheet" href="styles.css?v=13" />
+<link rel="stylesheet" href="styles.css?v=14" />
 </head>
 
 <body>
@@ -91,7 +91,14 @@
 
     <!-- Schedule section -->
     <div id="cat-schedule" style="display:none;">
+      <div class="sched-bar">
+        <span class="sched-date" id="schedDate"></span>
+        <button class="btn-add-task" id="addTaskBtn" aria-label="Add task">+</button>
+      </div>
       <div class="week-strip" id="weekStrip"></div>
+      <div class="timeline-wrap">
+        <div class="timeline" id="timeline"></div>
+      </div>
     </div>
 
     <!-- Health sub-sections -->
@@ -403,6 +410,47 @@
 </div>
 
 
+<!-- Add task sheet -->
+<div class="sheet-backdrop" id="taskSheet">
+  <div class="sheet">
+    <div class="sheet-header">
+      <div class="sheet-title">Add task</div>
+      <button class="sheet-close" id="closeTaskSheet">Close</button>
+    </div>
+    <label class="field">
+      <span>Task name</span>
+      <input type="text" id="taskTitle" placeholder="e.g. Morning run" />
+    </label>
+    <label class="field">
+      <span>Time</span>
+      <input type="time" id="taskTime" value="08:00" />
+    </label>
+    <label class="field">
+      <span>Duration</span>
+      <select id="taskDuration">
+        <option value="15">15 min</option>
+        <option value="30" selected>30 min</option>
+        <option value="45">45 min</option>
+        <option value="60">1 hour</option>
+        <option value="90">1.5 hours</option>
+        <option value="120">2 hours</option>
+      </select>
+    </label>
+    <label class="field">
+      <span>Category</span>
+      <select id="taskCategory">
+        <option value="health">❤️ Health</option>
+        <option value="lifestyle">✨ Lifestyle</option>
+        <option value="work">💼 Work</option>
+        <option value="other">Other</option>
+      </select>
+    </label>
+    <div class="btn-row">
+      <button class="btn btn-primary btn-block" id="saveTaskBtn">Add task</button>
+    </div>
+  </div>
+</div>
+
 <nav class="cat-bar">
   <div class="cat-bar-inner">
     <button class="cat-btn" data-cat="schedule"><span class="cat-icon">📅</span>Schedule</button>
@@ -412,6 +460,6 @@
   </div>
 </nav>
 
-<script src="app.js?v=13"></script>
+<script src="app.js?v=14"></script>
 </body>
 </html>

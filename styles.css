@@ -229,3 +229,55 @@ code.inline { background: var(--surface-2); padding: 1px 5px; border-radius: 4px
 .auth-msg.info  { background: rgba(52,199,89,0.1); color: #34c759; }
 .auth-toggle { text-align: center; font-size: 13px; color: var(--text-2); margin: 12px 0 0; }
 .auth-toggle .btn-ghost { font-size: 13px; padding: 2px 4px; color: var(--accent); font-weight: 600; }
+
+/* ── Schedule / Timeline ───────────────────────────────────── */
+.sched-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px 8px;
+}
+.sched-date { font-size: 15px; font-weight: 600; color: var(--text); }
+.btn-add-task {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  font-size: 24px; line-height: 1; border: none; cursor: pointer;
+  display: grid; place-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,.25); flex-shrink: 0;
+}
+.timeline-wrap {
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 290px);
+}
+.timeline { position: relative; margin-left: 54px; margin-right: 12px; }
+.tl-hour {
+  position: relative; height: 60px;
+  border-top: 1px solid var(--border);
+}
+.tl-hour:last-child { border-bottom: 1px solid var(--border); }
+.tl-label {
+  position: absolute; left: -52px; top: -9px;
+  font-size: 11px; color: var(--text-2);
+  width: 44px; text-align: right; white-space: nowrap; user-select: none;
+}
+.tl-now {
+  position: absolute; left: -8px; right: 0;
+  height: 2px; background: #ff3b30; z-index: 3; pointer-events: none;
+}
+.tl-now::before {
+  content: ''; position: absolute; left: -4px; top: -3px;
+  width: 8px; height: 8px; border-radius: 50%; background: #ff3b30;
+}
+.task-block {
+  position: absolute; left: 2px; right: 2px; border-radius: 7px;
+  padding: 4px 8px; cursor: pointer; overflow: hidden; z-index: 2;
+  color: #fff; display: flex; flex-direction: column; justify-content: center;
+  box-sizing: border-box; -webkit-tap-highlight-color: transparent;
+  transition: opacity .15s;
+}
+.task-block.done { opacity: 0.4; }
+.task-block.done .task-block-title { text-decoration: line-through; }
+.task-block-title { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.task-block-time  { font-size: 10px; opacity: .85; margin-top: 1px; }
+.tl-empty {
+  position: absolute; top: 120px; left: 0; right: 0;
+  text-align: center; color: var(--text-2); font-size: 14px; pointer-events: none;
+}

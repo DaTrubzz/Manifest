@@ -25,7 +25,15 @@ const DEFAULTS = {
     name: "", waterGoal: 8, sleepGoal: 8, installDismissed: false,
     sync: { url: "", key: "" }
   },
-  days: {}
+  days: {},
+  tasks: []
+};
+
+const CAT_COLORS = {
+  health:    "#34c759",
+  lifestyle: "#a855f7",
+  work:      "#3b82f6",
+  other:     "#6b7280"
 };
 
 function load() {
@@ -40,7 +48,8 @@ function load() {
       settings: {
         ...DEFAULTS.settings, ...(parsed.settings || {}),
         sync: { ...DEFAULTS.settings.sync, ...((parsed.settings || {}).sync || {}) }
-      }
+      },
+      tasks: parsed.tasks || []
     };
   } catch (e) { return structuredClone(DEFAULTS); }
 }
@@ -486,6 +495,122 @@ function renderHistory() {
   document.getElementById("daysLogged").textContent = logged;
 }
 
+/* ---------- timeline ---------- */
+function renderTimeline() {
+  const tl = document.getElementById("timeline");
+  if (!tl) return;
+
+  const today = todayKey();
+  const schedDateEl = document.getElementById("schedDate");
+  if (schedDateEl) schedDateEl.textContent = fmtLong(new Date());
+
+  const tasks = (state.tasks || []).filter(t => t.date === today);
+
+  const START_HOUR = 5;   // 5 am
+  const END_HOUR   = 23;  // 11 pm (inclusive)
+  const HOUR_PX    = 60;  // px per hour (= 1 px per minute)
+
+  tl.innerHTML = "";
+  tl.style.height = ((END_HOUR - START_HOUR + 1) * HOUR_PX) + "px";
+
+  // Hour rows
+  for (let h = START_HOUR; h <= END_HOUR; h++) {
+    const row = document.createElement("div");
+    row.className = "tl-hour";
+    const label = document.createElement("div");
+    label.className = "tl-label";
+    label.textContent = h === 12 ? "12pm"
+      : h === 0               ? "12am"
+      : h < 12                ? `${h}am`
+      : `${h - 12}pm`;
+    row.appendChild(label);
+    tl.appendChild(row);
+  }
+
+  // "Now" line
+  const now = new Date();
+  const nowH = now.getHours(), nowM = now.getMinutes();
+  if (nowH >= START_HOUR && nowH <= END_HOUR) {
+    const line = document.createElement("div");
+    line.className = "tl-now";
+    line.style.top = ((nowH - START_HOUR) * HOUR_PX + (nowM / 60) * HOUR_PX) + "px";
+    tl.appendChild(line);
+  }
+
+  // Task blocks
+  const fmtT = (h, m) => {
+    const dh = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return `${dh}:${String(m).padStart(2, "0")}${h < 12 ? "am" : "pm"}`;
+  };
+
+  tasks.forEach(task => {
+    const [th, tm] = (task.time || "08:00").split(":").map(Number);
+    if (th < START_HOUR || th > END_HOUR) return;
+
+    const topPx    = (th - START_HOUR) * HOUR_PX + (tm / 60) * HOUR_PX;
+    const heightPx = Math.max(24, ((task.duration || 30) / 60) * HOUR_PX);
+    const color    = CAT_COLORS[task.category] || CAT_COLORS.other;
+
+    const block = document.createElement("div");
+    block.className = "task-block" + (task.done ? " done" : "");
+    block.style.top    = topPx + "px";
+    block.style.height = heightPx + "px";
+    block.style.background = color;
+
+    const titleEl = document.createElement("div");
+    titleEl.className = "task-block-title";
+    titleEl.textContent = task.title;
+    block.appendChild(titleEl);
+
+    if (heightPx >= 40) {
+      const endMin = th * 60 + tm + (task.duration || 30);
+      const timeEl = document.createElement("div");
+      timeEl.className = "task-block-time";
+      timeEl.textContent = `${fmtT(th, tm)} – ${fmtT(Math.floor(endMin / 60) % 24, endMin % 60)}`;
+      block.appendChild(timeEl);
+    }
+
+    // Tap → toggle done
+    block.addEventListener("click", () => {
+      task.done = !task.done;
+      save();
+      renderTimeline();
+    });
+
+    // Long-press → delete
+    let pressTimer;
+    block.addEventListener("touchstart", () => {
+      pressTimer = setTimeout(() => {
+        if (confirm(`Delete "${task.title}"?`)) {
+          state.tasks = state.tasks.filter(t => t.id !== task.id);
+          save(); renderTimeline();
+        }
+      }, 700);
+    }, { passive: true });
+    block.addEventListener("touchend",  () => clearTimeout(pressTimer));
+    block.addEventListener("touchmove", () => clearTimeout(pressTimer), { passive: true });
+
+    tl.appendChild(block);
+  });
+
+  // Empty state
+  if (tasks.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "tl-empty";
+    empty.textContent = "No tasks for today. Tap + to add one.";
+    tl.appendChild(empty);
+  }
+
+  // Scroll so current time is visible (or land on 7am)
+  const wrap = document.querySelector(".timeline-wrap");
+  if (wrap) {
+    const target = nowH >= START_HOUR
+      ? Math.max(0, (nowH - START_HOUR - 1) * HOUR_PX)
+      : (7 - START_HOUR) * HOUR_PX;
+    wrap.scrollTop = target;
+  }
+}
+
 /* ---------- interactions ---------- */
 function bind() {
   document.querySelectorAll("#workoutTypes button[data-type]").forEach(btn => {
@@ -534,6 +659,32 @@ function bind() {
     sheet.classList.remove("open");
   });
 
+  // task sheet
+  const taskSheet = document.getElementById("taskSheet");
+  document.getElementById("addTaskBtn").addEventListener("click", () => {
+    const n = new Date();
+    const hh = String(n.getHours()).padStart(2, "0");
+    const mm = String(Math.round(n.getMinutes() / 15) * 15 % 60).padStart(2, "0");
+    document.getElementById("taskTime").value = `${hh}:${mm}`;
+    document.getElementById("taskTitle").value = "";
+    taskSheet.classList.add("open");
+  });
+  document.getElementById("closeTaskSheet").addEventListener("click", () => taskSheet.classList.remove("open"));
+  taskSheet.addEventListener("click", (e) => { if (e.target === taskSheet) taskSheet.classList.remove("open"); });
+  document.getElementById("saveTaskBtn").addEventListener("click", () => {
+    const title    = document.getElementById("taskTitle").value.trim();
+    const time     = document.getElementById("taskTime").value;
+    const duration = parseInt(document.getElementById("taskDuration").value) || 30;
+    const category = document.getElementById("taskCategory").value;
+    if (!title) { flash("Enter a task name"); return; }
+    if (!time)  { flash("Pick a time"); return; }
+    if (!state.tasks) state.tasks = [];
+    state.tasks.push({ id: Date.now().toString(36), title, date: todayKey(), time, duration, category, done: false });
+    save();
+    taskSheet.classList.remove("open");
+    renderTimeline();
+  });
+
   // category bar (bottom) — generic, no hardcoding needed for new tabs
   document.querySelectorAll(".cat-btn").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -545,6 +696,7 @@ function bind() {
       document.getElementById(`cat-${cat}`).style.display = "";
       const subtabs = document.getElementById(`subtabs-${cat}`);
       if (subtabs) subtabs.style.display = "";
+      if (cat === "schedule") renderTimeline();
     });
   });
 
