@@ -507,7 +507,7 @@ function renderTimeline() {
   const tasks = (state.tasks || []).filter(t => t.date === today);
 
   const START_HOUR = 0;   // 12 am
-  const END_HOUR   = 23;  // 11 pm (inclusive)
+  const END_HOUR   = 24;  // 12 am next day (closing marker)
   const HOUR_PX    = 60;  // px per hour (= 1 px per minute)
 
   tl.innerHTML = "";
@@ -519,8 +519,8 @@ function renderTimeline() {
     row.className = "tl-hour";
     const label = document.createElement("div");
     label.className = "tl-label";
-    label.textContent = h === 12 ? "12pm"
-      : h === 0               ? "12am"
+    label.textContent = h === 0 || h === 24 ? "12am"
+      : h === 12              ? "12pm"
       : h < 12                ? `${h}am`
       : `${h - 12}pm`;
     row.appendChild(label);
