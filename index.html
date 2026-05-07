@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
 <link rel="manifest" href="manifest.webmanifest" />
-<link rel="stylesheet" href="styles.css?v=17" />
+<link rel="stylesheet" href="styles.css?v=18" />
 </head>
 
 <body>
@@ -139,6 +139,29 @@
             <div class="streak" id="sleepStreak">0d</div>
           </div>
           <button class="btn btn-block" id="logSleepBtn" style="margin-top:12px;">Log sleep</button>
+        </div>
+
+        <div class="card sleep-schedule-card">
+          <div class="sleep-sched-header">
+            <span class="sleep-sched-icon">🛏</span>
+            <span class="sleep-sched-title">Sleep schedule</span>
+          </div>
+          <p class="help-text" style="margin:0 0 14px;">Set your nightly routine — it will overlay on your Schedule timeline.</p>
+          <label class="field">
+            <span>Bedtime (in bed)</span>
+            <input type="time" id="setBedtime" />
+          </label>
+          <label class="field">
+            <span>Lights out (fall asleep)</span>
+            <input type="time" id="setLightsOut" />
+          </label>
+          <label class="field">
+            <span>Wake time</span>
+            <input type="time" id="setWakeTime" />
+          </label>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="saveSleepSchedule">Save schedule</button>
+          </div>
         </div>
       </div>
 
@@ -460,6 +483,6 @@
   </div>
 </nav>
 
-<script src="app.js?v=17"></script>
+<script src="app.js?v=18"></script>
 </body>
 </html>

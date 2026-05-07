@@ -23,7 +23,8 @@ const KEY = "manifest.v1";
 const DEFAULTS = {
   settings: {
     name: "", waterGoal: 8, sleepGoal: 8, installDismissed: false,
-    sync: { url: "", key: "" }
+    sync: { url: "", key: "" },
+    sleepSchedule: { bedtime: "", lightsOut: "", wakeTime: "" }
   },
   days: {},
   tasks: []
@@ -47,7 +48,8 @@ function load() {
       ...structuredClone(DEFAULTS), ...parsed,
       settings: {
         ...DEFAULTS.settings, ...(parsed.settings || {}),
-        sync: { ...DEFAULTS.settings.sync, ...((parsed.settings || {}).sync || {}) }
+        sync: { ...DEFAULTS.settings.sync, ...((parsed.settings || {}).sync || {}) },
+        sleepSchedule: { ...DEFAULTS.settings.sleepSchedule, ...((parsed.settings || {}).sleepSchedule || {}) }
       },
       tasks: parsed.tasks || []
     };
@@ -527,6 +529,38 @@ function renderTimeline() {
     tl.appendChild(row);
   }
 
+  // Sleep goal overlay
+  const ss = state.settings.sleepSchedule || {};
+  const addSleepBlock = (topPx, heightPx, label, inBed) => {
+    if (heightPx <= 0) return;
+    const b = document.createElement("div");
+    b.className = "sleep-block" + (inBed ? " in-bed" : "");
+    b.style.top    = topPx + "px";
+    b.style.height = heightPx + "px";
+    b.textContent  = label;
+    tl.appendChild(b);
+  };
+  if (ss.wakeTime) {
+    // Morning carry-over: 12am → wake time (last night's sleep bleeding into today)
+    const [wH, wM] = ss.wakeTime.split(":").map(Number);
+    const wakePx = wH * HOUR_PX + (wM / 60) * HOUR_PX;
+    if (wakePx > 0) addSleepBlock(0, wakePx, "💤 Asleep", false);
+  }
+  if (ss.bedtime) {
+    // Evening: bedtime → midnight
+    const [bH, bM] = ss.bedtime.split(":").map(Number);
+    const bedPx      = bH * HOUR_PX + (bM / 60) * HOUR_PX;
+    const midnightPx = END_HOUR * HOUR_PX;
+    if (ss.lightsOut) {
+      const [lH, lM] = ss.lightsOut.split(":").map(Number);
+      const lightsPx = lH * HOUR_PX + (lM / 60) * HOUR_PX;
+      addSleepBlock(bedPx,    lightsPx - bedPx,    "🛏 In bed",  true);
+      addSleepBlock(lightsPx, midnightPx - lightsPx, "💤 Asleep", false);
+    } else {
+      addSleepBlock(bedPx, midnightPx - bedPx, "💤 Asleep", false);
+    }
+  }
+
   // "Now" line
   const now = new Date();
   const nowH = now.getHours(), nowM = now.getMinutes();
@@ -657,6 +691,24 @@ function bind() {
     const hours = parseFloat(document.getElementById("sleepHours").value) || 0;
     window.manifest.logSleep(hours, chosenQuality);
     sheet.classList.remove("open");
+  });
+
+  // sleep schedule
+  const ssSaved = state.settings.sleepSchedule || {};
+  const elBedtime    = document.getElementById("setBedtime");
+  const elLightsOut  = document.getElementById("setLightsOut");
+  const elWakeTime   = document.getElementById("setWakeTime");
+  if (elBedtime)   elBedtime.value   = ssSaved.bedtime   || "";
+  if (elLightsOut) elLightsOut.value = ssSaved.lightsOut || "";
+  if (elWakeTime)  elWakeTime.value  = ssSaved.wakeTime  || "";
+  document.getElementById("saveSleepSchedule")?.addEventListener("click", () => {
+    state.settings.sleepSchedule = {
+      bedtime:   elBedtime?.value   || "",
+      lightsOut: elLightsOut?.value || "",
+      wakeTime:  elWakeTime?.value  || ""
+    };
+    save();
+    flash("Sleep schedule saved");
   });
 
   // task sheet
