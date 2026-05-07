@@ -261,6 +261,40 @@
       </div>
     </div>
 
+    <h2 class="section">Notifications</h2>
+    <div class="card" id="notifCard">
+      <div id="notifUnsupported" style="display:none;">
+        <p class="help-text" style="margin:0;">Push notifications require iOS 16.4+ with Manifest installed to your home screen via Add to Home Screen.</p>
+      </div>
+      <div id="notifSupported">
+        <div id="notifDefault">
+          <p class="help-text" style="margin:0 0 12px;">Get a daily reminder and Sunday recap on your iPhone.</p>
+          <button class="btn btn-primary" id="enableNotifBtn">Enable notifications</button>
+        </div>
+        <div id="notifGranted" style="display:none;">
+          <label class="field">
+            <span>Daily reminder time</span>
+            <input type="time" id="reminderTime" value="20:00" />
+          </label>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;">
+            <span style="font-size:14px;font-weight:500;">Daily reminders</span>
+            <input type="checkbox" id="reminderEnabled" style="width:auto;" />
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
+            <span style="font-size:14px;font-weight:500;">Weekly summary (Sundays)</span>
+            <input type="checkbox" id="weeklySummary" checked style="width:auto;" />
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="saveNotifBtn">Save</button>
+            <button class="btn btn-ghost" id="disableNotifBtn">Disable</button>
+          </div>
+        </div>
+        <div id="notifDenied" style="display:none;">
+          <p class="help-text" style="margin:0;color:#ff3b30;">Notifications blocked. Go to iPhone Settings → Safari → Notifications to re-enable.</p>
+        </div>
+      </div>
+    </div>
+
     <h2 class="section">Data</h2>
     <div class="card">
       <button class="btn btn-block" id="exportData">Export data (JSON)</button>

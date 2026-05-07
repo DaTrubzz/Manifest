@@ -5,6 +5,15 @@
    - Handles ?action=... URL deep links.
 ============================================================ */
 
+// ── Push notification VAPID public key ────────────────────────────────────
+const VAPID_PUBLIC_KEY = "BFz5YIx2FDGu_uIo1lx-jrVu6I7uWjLoSa8fPMW2l_JjCh08qu87rCNtxzYlTYpj3rqB9fsxohz1DqTSz5OT2JU";
+
+function urlBase64ToUint8Array(b64) {
+  const pad = "=".repeat((4 - b64.length % 4) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, "+").replace(/_/g, "/"));
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
 // ── Supabase config ────────────────────────────────────────────────────────
 const SUPABASE_URL = "https://ablwnzpllekdtxnmurax.supabase.co";
 const SUPABASE_KEY = "sb_publishable_4BWYlRVGmdlm_B3e2iEg0g_704GJL1T";
@@ -155,6 +164,7 @@ async function initAuth() {
       document.getElementById("authOverlay").style.display = "none";
       startSyncLoop();
       render();
+      renderNotifUI();
     } else if (event === "SIGNED_OUT") {
       clearInterval(_pullTimer);
       setSyncStatus("", "");
@@ -662,6 +672,14 @@ function bind() {
     flash("Signed out");
   });
 
+  // notifications
+  document.getElementById("enableNotifBtn")?.addEventListener("click", async () => {
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") renderNotifUI();
+  });
+  document.getElementById("saveNotifBtn")?.addEventListener("click", saveNotifPrefs);
+  document.getElementById("disableNotifBtn")?.addEventListener("click", disableNotifs);
+
   document.getElementById("disconnectBtn").addEventListener("click", async () => {
     const sb = await getSupabase();
     if (sb) await sb.auth.signOut();
@@ -671,6 +689,75 @@ function bind() {
     renderAuthState();
     flash("Disconnected");
   });
+}
+
+/* ===========================================================
+   PUSH NOTIFICATIONS
+=========================================================== */
+async function notifState() {
+  if (!("Notification" in window) || !("PushManager" in window)) return "unsupported";
+  return Notification.permission;
+}
+
+async function renderNotifUI() {
+  if (!_session) return;
+  const state = await notifState();
+  const unsupported = document.getElementById("notifUnsupported");
+  const supported = document.getElementById("notifSupported");
+  if (!unsupported || !supported) return;
+  unsupported.style.display = state === "unsupported" ? "" : "none";
+  supported.style.display = state !== "unsupported" ? "" : "none";
+  document.getElementById("notifDefault").style.display = state === "default" ? "" : "none";
+  document.getElementById("notifGranted").style.display = state === "granted" ? "" : "none";
+  document.getElementById("notifDenied").style.display = state === "denied" ? "" : "none";
+
+  if (state === "granted") {
+    const sb = await getSupabase();
+    if (!sb) return;
+    const { data } = await sb.from("push_subscriptions")
+      .select("reminder_enabled, reminder_time, weekly_summary")
+      .eq("user_id", _session.user.id).maybeSingle();
+    if (data) {
+      document.getElementById("reminderEnabled").checked = data.reminder_enabled;
+      document.getElementById("reminderTime").value = data.reminder_time || "20:00";
+      document.getElementById("weeklySummary").checked = data.weekly_summary;
+    }
+  }
+}
+
+async function saveNotifPrefs() {
+  const sb = await getSupabase();
+  if (!sb || !_session) return;
+  const reg = await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) {
+    sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+  }
+  const { error } = await sb.from("push_subscriptions").upsert({
+    user_id: _session.user.id,
+    subscription: sub.toJSON(),
+    reminder_enabled: document.getElementById("reminderEnabled").checked,
+    reminder_time: document.getElementById("reminderTime").value || "20:00",
+    weekly_summary: document.getElementById("weeklySummary").checked,
+    tz_offset: new Date().getTimezoneOffset(),
+    updated_at: new Date().toISOString()
+  }, { onConflict: "user_id" });
+  if (error) { flash("Failed to save"); return; }
+  flash("Notification settings saved");
+}
+
+async function disableNotifs() {
+  const sb = await getSupabase();
+  if (!sb || !_session) return;
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.getSubscription();
+  if (sub) await sub.unsubscribe();
+  await sb.from("push_subscriptions").delete().eq("user_id", _session.user.id);
+  flash("Notifications disabled");
+  renderNotifUI();
 }
 
 function flash(msg) {
