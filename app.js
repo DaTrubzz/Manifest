@@ -62,6 +62,11 @@ function save() {
 }
 let state = load();
 
+// Schedule tab state (selectedDate uses todayKey which is hoisted)
+let selectedDate = todayKey();
+let _calYear  = new Date().getFullYear();
+let _calMonth = new Date().getMonth();
+
 /* ---------- date helpers ---------- */
 function todayKey(d = new Date()) {
   const y = d.getFullYear();
@@ -413,20 +418,6 @@ function render() {
   document.getElementById("greeting").textContent = `${greet}${name}`;
   document.getElementById("todayDate").textContent = fmtLong(today);
 
-  const strip = document.getElementById("weekStrip");
-  strip.innerHTML = "";
-  for (let i = 6; i >= 0; i--) {
-    const d = addDays(today, -i);
-    const key = todayKey(d);
-    const day = getDay(key);
-    const c = dayCompletion(day);
-    const cls = c === 4 ? "complete" : c > 0 ? "partial" : "";
-    const isToday = i === 0 ? "today" : "";
-    const dow = d.toLocaleDateString(undefined, { weekday: "short" }).slice(0, 3);
-    strip.insertAdjacentHTML("beforeend",
-      `<div class="day-pill ${cls} ${isToday}"><div class="dow">${dow}</div><div class="num">${d.getDate()}</div><div class="ring"></div></div>`);
-  }
-
   const wType = td.workout && td.workout.type;
   document.getElementById("workoutSub").textContent = wType ? `Done — ${wType}` : "Not logged yet";
   document.querySelectorAll("#workoutTypes button[data-type]").forEach(b => {
@@ -497,16 +488,89 @@ function renderHistory() {
   document.getElementById("daysLogged").textContent = logged;
 }
 
+/* ---------- month calendar ---------- */
+function renderMonthCalendar() {
+  const cal = document.getElementById("monthCal");
+  if (!cal) return;
+
+  const today        = todayKey();
+  const firstOfMonth = new Date(_calYear, _calMonth, 1);
+  const daysInMonth  = new Date(_calYear, _calMonth + 1, 0).getDate();
+  const startDow     = firstOfMonth.getDay(); // 0 = Sunday
+  const monthLabel   = firstOfMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
+  cal.innerHTML = `
+    <div class="month-nav">
+      <button class="month-nav-btn" id="calPrev">‹</button>
+      <span class="month-nav-title">${monthLabel}</span>
+      <button class="month-nav-btn" id="calNext">›</button>
+    </div>
+    <div class="cal-grid" id="calGrid">
+      <div class="cal-dow">Su</div><div class="cal-dow">Mo</div>
+      <div class="cal-dow">Tu</div><div class="cal-dow">We</div>
+      <div class="cal-dow">Th</div><div class="cal-dow">Fr</div>
+      <div class="cal-dow">Sa</div>
+    </div>`;
+
+  const grid = cal.querySelector("#calGrid");
+
+  // Blank cells before the 1st
+  for (let i = 0; i < startDow; i++) grid.insertAdjacentHTML("beforeend", "<div></div>");
+
+  // Day cells
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date     = new Date(_calYear, _calMonth, d);
+    const key      = todayKey(date);
+    const comp     = dayCompletion(getDay(key));
+    const hasTasks = (state.tasks || []).some(t => t.date === key);
+
+    let cls = "cal-day";
+    if (key === today)                      cls += " is-today";
+    if (key === selectedDate && key !== today) cls += " is-selected";
+
+    const habitDot = comp > 0
+      ? `<div class="cal-dot ${comp === 4 ? "dot-full" : "dot-partial"}"></div>` : "";
+    const taskDot  = hasTasks
+      ? `<div class="cal-dot dot-task"></div>` : "";
+    const dots     = (habitDot || taskDot)
+      ? `<div class="cal-day-dots">${habitDot}${taskDot}</div>` : "";
+
+    grid.insertAdjacentHTML("beforeend",
+      `<div class="${cls}" data-date="${key}"><span class="cal-day-num">${d}</span>${dots}</div>`);
+  }
+
+  // Prev / next month
+  cal.querySelector("#calPrev").addEventListener("click", () => {
+    _calMonth--; if (_calMonth < 0)  { _calMonth = 11; _calYear--; }
+    renderMonthCalendar();
+  });
+  cal.querySelector("#calNext").addEventListener("click", () => {
+    _calMonth++; if (_calMonth > 11) { _calMonth = 0;  _calYear++; }
+    renderMonthCalendar();
+  });
+
+  // Day selection
+  grid.querySelectorAll(".cal-day[data-date]").forEach(cell => {
+    cell.addEventListener("click", () => {
+      selectedDate = cell.dataset.date;
+      renderMonthCalendar();
+      renderTimeline();
+    });
+  });
+}
+
 /* ---------- timeline ---------- */
 function renderTimeline() {
   const tl = document.getElementById("timeline");
   if (!tl) return;
 
-  const today = todayKey();
   const schedDateEl = document.getElementById("schedDate");
-  if (schedDateEl) schedDateEl.textContent = fmtLong(new Date());
+  if (schedDateEl) {
+    const selD = new Date(selectedDate + "T12:00:00");
+    schedDateEl.textContent = fmtLong(selD);
+  }
 
-  const tasks = (state.tasks || []).filter(t => t.date === today);
+  const tasks = (state.tasks || []).filter(t => t.date === selectedDate);
 
   const START_HOUR = 0;   // 12 am
   const END_HOUR   = 24;  // 12 am next day (closing marker)
@@ -731,7 +795,7 @@ function bind() {
     if (!title) { flash("Enter a task name"); return; }
     if (!time)  { flash("Pick a time"); return; }
     if (!state.tasks) state.tasks = [];
-    state.tasks.push({ id: Date.now().toString(36), title, date: todayKey(), time, duration, category, done: false });
+    state.tasks.push({ id: Date.now().toString(36), title, date: selectedDate, time, duration, category, done: false });
     save();
     taskSheet.classList.remove("open");
     renderTimeline();
@@ -748,7 +812,7 @@ function bind() {
       document.getElementById(`cat-${cat}`).style.display = "";
       const subtabs = document.getElementById(`subtabs-${cat}`);
       if (subtabs) subtabs.style.display = "";
-      if (cat === "schedule") renderTimeline();
+      if (cat === "schedule") { renderMonthCalendar(); renderTimeline(); }
     });
   });
 
