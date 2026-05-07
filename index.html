@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
 <link rel="manifest" href="manifest.webmanifest" />
-<link rel="stylesheet" href="styles.css?v=22" />
+<link rel="stylesheet" href="styles.css?v=23" />
 </head>
 
 <body>
@@ -87,6 +87,7 @@
         <button class="sub-btn" data-cat="health" data-sub="sleep">Sleep</button>
         <button class="sub-btn" data-cat="health" data-sub="nutrition">Nutrition</button>
       </div>
+      <button class="sub-add-btn" data-cat="health" aria-label="Add task">+</button>
     </div>
 
     <!-- Schedule section -->
@@ -218,6 +219,7 @@
           <button class="sub-btn" data-cat="lifestyle" data-sub="social">Social</button>
           <button class="sub-btn" data-cat="lifestyle" data-sub="chores">Chores</button>
         </div>
+        <button class="sub-add-btn" data-cat="lifestyle" aria-label="Add task">+</button>
       </div>
       <div class="cards sub-section" id="sub-lifestyle-hobbies">
         <div class="cat-empty">Hobbies habits coming soon.</div>
@@ -240,6 +242,7 @@
           <button class="sub-btn active" data-cat="work" data-sub="occupation">Occupation</button>
           <button class="sub-btn" data-cat="work" data-sub="education">Education</button>
         </div>
+        <button class="sub-add-btn" data-cat="work" aria-label="Add task">+</button>
       </div>
       <div class="cards sub-section" id="sub-work-occupation">
         <div class="cat-empty">Occupation habits coming soon.</div>
@@ -466,9 +469,21 @@
     <label class="field">
       <span>Category</span>
       <select id="taskCategory">
-        <option value="health">❤️ Health</option>
-        <option value="lifestyle">✨ Lifestyle</option>
-        <option value="work">💼 Work</option>
+        <optgroup label="❤️ Health">
+          <option value="exercise">Exercise</option>
+          <option value="sleep">Sleep</option>
+          <option value="nutrition">Nutrition</option>
+        </optgroup>
+        <optgroup label="✨ Lifestyle">
+          <option value="hobbies">Hobbies</option>
+          <option value="environment">Environment</option>
+          <option value="social">Social</option>
+          <option value="chores">Chores</option>
+        </optgroup>
+        <optgroup label="💼 Work">
+          <option value="occupation">Occupation</option>
+          <option value="education">Education</option>
+        </optgroup>
         <option value="other">Other</option>
       </select>
     </label>
@@ -487,6 +502,6 @@
   </div>
 </nav>
 
-<script src="app.js?v=22"></script>
+<script src="app.js?v=23"></script>
 </body>
 </html>

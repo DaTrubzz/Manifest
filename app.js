@@ -31,10 +31,23 @@ const DEFAULTS = {
 };
 
 const CAT_COLORS = {
-  health:    "#34c759",
-  lifestyle: "#a855f7",
-  work:      "#3b82f6",
-  other:     "#6b7280"
+  // Health sub-categories
+  health:      "#34c759",
+  exercise:    "#34c759",
+  sleep:       "#af52de",
+  nutrition:   "#ff9500",
+  // Lifestyle sub-categories
+  lifestyle:   "#a855f7",
+  hobbies:     "#a855f7",
+  environment: "#30b86a",
+  social:      "#ec4899",
+  chores:      "#f59e0b",
+  // Work sub-categories
+  work:        "#3b82f6",
+  occupation:  "#3b82f6",
+  education:   "#6366f1",
+  // Fallback
+  other:       "#6b7280"
 };
 
 function load() {
@@ -794,13 +807,25 @@ function bind() {
 
   // task sheet
   const taskSheet = document.getElementById("taskSheet");
-  document.getElementById("addTaskBtn").addEventListener("click", () => {
+  function openTaskSheet(defaultCat) {
     const n = new Date();
     const hh = String(n.getHours()).padStart(2, "0");
     const mm = String(Math.round(n.getMinutes() / 15) * 15 % 60).padStart(2, "0");
     document.getElementById("taskTime").value = `${hh}:${mm}`;
     document.getElementById("taskTitle").value = "";
+    if (defaultCat) document.getElementById("taskCategory").value = defaultCat;
     taskSheet.classList.add("open");
+  }
+  document.getElementById("addTaskBtn").addEventListener("click", () => openTaskSheet(null));
+
+  // sub-section + buttons — default to whichever sub-tab is active
+  document.querySelectorAll(".sub-add-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const cat = btn.dataset.cat;
+      const activeSub = document.querySelector(`#subtabs-${cat} .sub-btn.active`);
+      const defaultCat = activeSub ? activeSub.dataset.sub : cat;
+      openTaskSheet(defaultCat);
+    });
   });
   document.getElementById("closeTaskSheet").addEventListener("click", () => taskSheet.classList.remove("open"));
   taskSheet.addEventListener("click", (e) => { if (e.target === taskSheet) taskSheet.classList.remove("open"); });
