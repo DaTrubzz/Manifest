@@ -183,7 +183,10 @@ label.field span { display: block; color: var(--text-2); font-size: 13px; margin
 .sub-btn.active { background: var(--accent); color: white; }
 
 .screen { display: none; }
-.screen.active { display: block; }
+.screen.active {
+  display: block;
+  min-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 84px);
+}
 
 .history-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 12px; }
 .h-cell { aspect-ratio: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; display: grid; place-items: center; font-size: 12px; color: var(--text-2); position: relative; }
