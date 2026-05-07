@@ -209,6 +209,7 @@ function schedulePush() {
 }
 
 async function pushNow() {
+  _pushTimer = null; // mark debounce as complete so pulls can resume
   const sb = await getSupabase();
   if (!sb || !_session) return;
   try {
@@ -237,6 +238,7 @@ async function pushNow() {
 async function pullNow() {
   const sb = await getSupabase();
   if (!sb || !_session) return;
+  if (_pushTimer) return; // don't overwrite local changes mid-debounce
   try {
     setSyncStatus("busy", "Syncing…");
     const { data, error } = await sb.from("manifest_data")
@@ -248,18 +250,15 @@ async function pullNow() {
       return;
     }
     const remote = data.data || {};
-    const remoteTs = new Date(data.updated_at).getTime();
-    const localTs = state.lastLocalUpdate || 0;
-    if (remoteTs > localTs) {
-      state.days = remote.days || {};
-      state.settings = {
-        ...state.settings,
-        ...(remote.settings || {}),
-        sync: state.settings.sync // keep local sync config
-      };
-      localStorage.setItem(KEY, JSON.stringify(state));
-      render();
-    }
+    state.days = remote.days || {};
+    state.settings = {
+      ...state.settings,
+      ...(remote.settings || {}),
+      sync: state.settings.sync // keep local sync config
+    };
+    state.lastLocalUpdate = new Date(data.updated_at).getTime();
+    localStorage.setItem(KEY, JSON.stringify(state));
+    render();
     setSyncStatus("ok", "Synced");
   } catch (e) {
     console.warn("pull failed:", e);
