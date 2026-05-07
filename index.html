@@ -785,7 +785,7 @@ function startSyncLoop() {
   if (!_session) return;
   setSyncStatus("busy", "Connecting…");
   pullNow();
-  _pullTimer = setInterval(pullNow, 30_000);
+  _pullTimer = setInterval(pullNow, 5_000);
 }
 
 function setSyncStatus(cls, text) {
