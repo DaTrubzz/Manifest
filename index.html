@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
 <link rel="manifest" href="manifest.webmanifest" />
-<link rel="stylesheet" href="styles.css?v=6" />
+<link rel="stylesheet" href="styles.css?v=7" />
 </head>
 
 <body>
@@ -82,84 +82,104 @@
 
     <div class="week-strip" id="weekStrip"></div>
 
-    <div class="cards" id="cat-health">
-      <div class="card" id="cardWorkout">
-        <div class="card-row">
-          <div class="card-title">
-            <div class="icon-bubble workout">💪</div>
-            <div>
-              <div class="card-name">Workout</div>
-              <div class="card-sub" id="workoutSub">Not logged yet</div>
+    <!-- Sub-tab bar -->
+    <div class="sub-bar">
+      <div class="sub-tabs" id="subtabs-health">
+        <button class="sub-btn active" data-cat="health" data-sub="exercise">Exercise</button>
+        <button class="sub-btn" data-cat="health" data-sub="sleep">Sleep</button>
+        <button class="sub-btn" data-cat="health" data-sub="nutrition">Nutrition</button>
+      </div>
+      <div class="sub-tabs" id="subtabs-lifestyle" style="display:none;">
+        <!-- Lifestyle sub-tabs added here later -->
+      </div>
+    </div>
+
+    <!-- Health sub-sections -->
+    <div id="cat-health">
+      <div class="cards sub-section" id="sub-health-exercise">
+        <div class="card" id="cardWorkout">
+          <div class="card-row">
+            <div class="card-title">
+              <div class="icon-bubble workout">💪</div>
+              <div>
+                <div class="card-name">Workout</div>
+                <div class="card-sub" id="workoutSub">Not logged yet</div>
+              </div>
+            </div>
+            <div class="streak" id="workoutStreak">0d</div>
+          </div>
+          <div class="btn-row" id="workoutTypes">
+            <button class="btn-pill" data-type="Strength">Strength</button>
+            <button class="btn-pill" data-type="Cardio">Cardio</button>
+            <button class="btn-pill" data-type="Mobility">Mobility</button>
+            <button class="btn-pill" data-type="Other">Other</button>
+            <button class="btn-pill btn-ghost" id="clearWorkout" style="display:none;">Clear</button>
+          </div>
+        </div>
+
+        <div class="card" id="cardWater">
+          <div class="card-row">
+            <div class="card-title">
+              <div class="icon-bubble water">💧</div>
+              <div>
+                <div class="card-name">Water</div>
+                <div class="card-sub" id="waterSub">Goal: 8 glasses</div>
+              </div>
+            </div>
+            <div class="streak" id="waterStreak">0d</div>
+          </div>
+          <div class="water-bar"><div class="water-bar-fill" id="waterFill"></div></div>
+          <div class="water-controls">
+            <div class="water-count">
+              <span id="waterNow">0</span><small> / <span id="waterGoal">8</span></small>
+            </div>
+            <div class="water-buttons">
+              <button class="icon-btn" id="waterMinus">−</button>
+              <button class="icon-btn plus" id="waterPlus">+</button>
             </div>
           </div>
-          <div class="streak" id="workoutStreak">0d</div>
-        </div>
-        <div class="btn-row" id="workoutTypes">
-          <button class="btn-pill" data-type="Strength">Strength</button>
-          <button class="btn-pill" data-type="Cardio">Cardio</button>
-          <button class="btn-pill" data-type="Mobility">Mobility</button>
-          <button class="btn-pill" data-type="Other">Other</button>
-          <button class="btn-pill btn-ghost" id="clearWorkout" style="display:none;">Clear</button>
         </div>
       </div>
 
-      <div class="card" id="cardWater">
-        <div class="card-row">
-          <div class="card-title">
-            <div class="icon-bubble water">💧</div>
-            <div>
-              <div class="card-name">Water</div>
-              <div class="card-sub" id="waterSub">Goal: 8 glasses</div>
+      <div class="cards sub-section" id="sub-health-sleep" style="display:none;">
+        <div class="card" id="cardSleep">
+          <div class="card-row">
+            <div class="card-title">
+              <div class="icon-bubble sleep">😴</div>
+              <div>
+                <div class="card-name">Sleep</div>
+                <div class="card-sub" id="sleepSub">Tap to log last night</div>
+              </div>
             </div>
+            <div class="streak" id="sleepStreak">0d</div>
           </div>
-          <div class="streak" id="waterStreak">0d</div>
-        </div>
-        <div class="water-bar"><div class="water-bar-fill" id="waterFill"></div></div>
-        <div class="water-controls">
-          <div class="water-count">
-            <span id="waterNow">0</span><small> / <span id="waterGoal">8</span></small>
-          </div>
-          <div class="water-buttons">
-            <button class="icon-btn" id="waterMinus">−</button>
-            <button class="icon-btn plus" id="waterPlus">+</button>
-          </div>
+          <button class="btn btn-block" id="logSleepBtn" style="margin-top:12px;">Log sleep</button>
         </div>
       </div>
 
-      <div class="card" id="cardSleep">
-        <div class="card-row">
-          <div class="card-title">
-            <div class="icon-bubble sleep">😴</div>
-            <div>
-              <div class="card-name">Sleep</div>
-              <div class="card-sub" id="sleepSub">Tap to log last night</div>
+      <div class="cards sub-section" id="sub-health-nutrition" style="display:none;">
+        <div class="card" id="cardFood">
+          <div class="card-row">
+            <div class="card-title">
+              <div class="icon-bubble food">🥗</div>
+              <div>
+                <div class="card-name">Nutrition</div>
+                <div class="card-sub" id="foodSub">How did you eat today?</div>
+              </div>
             </div>
+            <div class="streak" id="foodStreak">0d</div>
           </div>
-          <div class="streak" id="sleepStreak">0d</div>
-        </div>
-        <button class="btn btn-block" id="logSleepBtn" style="margin-top:12px;">Log sleep</button>
-      </div>
-
-      <div class="card" id="cardFood">
-        <div class="card-row">
-          <div class="card-title">
-            <div class="icon-bubble food">🥗</div>
-            <div>
-              <div class="card-name">Nutrition</div>
-              <div class="card-sub" id="foodSub">How did you eat today?</div>
-            </div>
+          <div class="seg" id="foodSeg">
+            <button data-rating="good">On plan</button>
+            <button data-rating="ok">So-so</button>
+            <button data-rating="off">Off plan</button>
           </div>
-          <div class="streak" id="foodStreak">0d</div>
-        </div>
-        <div class="seg" id="foodSeg">
-          <button data-rating="good">On plan</button>
-          <button data-rating="ok">So-so</button>
-          <button data-rating="off">Off plan</button>
         </div>
       </div>
     </div>
 
-    <div class="cards" id="cat-lifestyle" style="display:none;">
+    <!-- Lifestyle section -->
+    <div id="cat-lifestyle" style="display:none;">
       <div class="cat-empty">Lifestyle habits coming soon.<br>This is where things like mindfulness,<br>journaling, and screen time will live.</div>
     </div>
 
@@ -358,6 +378,6 @@
   </div>
 </nav>
 
-<script src="app.js?v=6"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>

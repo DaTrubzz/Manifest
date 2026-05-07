@@ -534,13 +534,28 @@ function bind() {
     sheet.classList.remove("open");
   });
 
-  // category bar
+  // category bar (bottom)
   document.querySelectorAll(".cat-btn").forEach(btn => {
     btn.addEventListener("click", () => {
+      const cat = btn.dataset.cat;
       document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-      document.getElementById("cat-health").style.display = btn.dataset.cat === "health" ? "" : "none";
-      document.getElementById("cat-lifestyle").style.display = btn.dataset.cat === "lifestyle" ? "" : "none";
+      document.getElementById("cat-health").style.display = cat === "health" ? "" : "none";
+      document.getElementById("cat-lifestyle").style.display = cat === "lifestyle" ? "" : "none";
+      document.getElementById("subtabs-health").style.display = cat === "health" ? "" : "none";
+      document.getElementById("subtabs-lifestyle").style.display = cat === "lifestyle" ? "" : "none";
+    });
+  });
+
+  // sub-tabs (top)
+  document.querySelectorAll(".sub-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const cat = btn.dataset.cat;
+      const sub = btn.dataset.sub;
+      document.querySelectorAll(`#subtabs-${cat} .sub-btn`).forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      document.querySelectorAll(`#cat-${cat} .sub-section`).forEach(s => s.style.display = "none");
+      document.getElementById(`sub-${cat}-${sub}`).style.display = "";
     });
   });
 
