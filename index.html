@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
 <link rel="manifest" href="manifest.webmanifest" />
-<link rel="stylesheet" href="styles.css?v=12" />
+<link rel="stylesheet" href="styles.css?v=13" />
 </head>
 
 <body>
@@ -80,8 +80,6 @@
       <div id="syncPill" class="sync-pill" style="display:none;"><span class="dot"></span><span id="syncStatus">Sync off</span></div>
     </header>
 
-    <div class="week-strip" id="weekStrip"></div>
-
     <!-- Sub-tab bar -->
     <div class="sub-bar">
       <div class="sub-tabs" id="subtabs-health">
@@ -89,6 +87,11 @@
         <button class="sub-btn" data-cat="health" data-sub="sleep">Sleep</button>
         <button class="sub-btn" data-cat="health" data-sub="nutrition">Nutrition</button>
       </div>
+    </div>
+
+    <!-- Schedule section -->
+    <div id="cat-schedule" style="display:none;">
+      <div class="week-strip" id="weekStrip"></div>
     </div>
 
     <!-- Health sub-sections -->
@@ -402,12 +405,13 @@
 
 <nav class="cat-bar">
   <div class="cat-bar-inner">
+    <button class="cat-btn" data-cat="schedule"><span class="cat-icon">📅</span>Schedule</button>
     <button class="cat-btn active" data-cat="health"><span class="cat-icon">❤️</span>Health</button>
     <button class="cat-btn" data-cat="lifestyle"><span class="cat-icon">✨</span>Lifestyle</button>
     <button class="cat-btn" data-cat="work"><span class="cat-icon">💼</span>Work</button>
   </div>
 </nav>
 
-<script src="app.js?v=12"></script>
+<script src="app.js?v=13"></script>
 </body>
 </html>
