@@ -590,7 +590,7 @@ function renderMonthCalendar() {
 }
 
 /* ---------- timeline ---------- */
-function renderTimeline() {
+function renderTimeline(preserveScroll = false) {
   const tl = document.getElementById("timeline");
   if (!tl) return;
 
@@ -702,7 +702,7 @@ function renderTimeline() {
     block.addEventListener("click", () => {
       task.done = !task.done;
       save();
-      renderTimeline();
+      renderTimeline(true);
     });
 
     // Long-press → delete
@@ -711,7 +711,7 @@ function renderTimeline() {
       pressTimer = setTimeout(() => {
         if (confirm(`Delete "${task.title}"?`)) {
           state.tasks = state.tasks.filter(t => t.id !== task.id);
-          save(); renderTimeline();
+          save(); renderTimeline(true);
         }
       }, 700);
     }, { passive: true });
@@ -729,13 +729,15 @@ function renderTimeline() {
     tl.appendChild(empty);
   }
 
-  // Scroll so current time is visible (or land on 7am)
-  const wrap = document.querySelector(".timeline-wrap");
-  if (wrap) {
-    const target = nowH >= START_HOUR
-      ? Math.max(0, (nowH - START_HOUR - 1) * HOUR_PX)
-      : (7 - START_HOUR) * HOUR_PX;
-    wrap.scrollTop = target;
+  // Scroll so current time is visible (skipped when preserving scroll position)
+  if (!preserveScroll) {
+    const wrap = document.querySelector(".timeline-wrap");
+    if (wrap) {
+      const target = nowH >= START_HOUR
+        ? Math.max(0, (nowH - START_HOUR - 1) * HOUR_PX)
+        : (7 - START_HOUR) * HOUR_PX;
+      wrap.scrollTop = target;
+    }
   }
 }
 
