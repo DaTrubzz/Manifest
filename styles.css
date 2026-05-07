@@ -145,10 +145,9 @@ label.field span { display: block; color: var(--text-2); font-size: 13px; margin
 /* ── Hamburger menu ───────────────────────────────────────────────────── */
 .menu-wrap { position: fixed; top: calc(env(safe-area-inset-top) + 12px); right: 20px; z-index: 45; }
 .menu-btn {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 10px; width: 38px; height: 38px;
-  display: grid; place-items: center; font-size: 18px;
-  cursor: pointer; color: var(--text); box-shadow: var(--shadow);
+  background: transparent; border: none; box-shadow: none;
+  width: 38px; height: 38px; display: grid; place-items: center;
+  font-size: 26px; cursor: pointer; color: var(--text);
 }
 .menu-dropdown {
   position: absolute; top: 46px; right: 0;
