@@ -152,6 +152,7 @@ async function initAuth() {
   _session = session;
   if (session) {
     startSyncLoop();
+    renderNotifUI();
   } else {
     const { url } = resolvedConfig();
     if (url) document.getElementById("authOverlay").style.display = "flex";
@@ -674,8 +675,24 @@ function bind() {
 
   // notifications
   document.getElementById("enableNotifBtn")?.addEventListener("click", async () => {
-    const permission = await Notification.requestPermission();
-    if (permission === "granted") renderNotifUI();
+    const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+    if (isiOS && !isStandalone) {
+      flash("Open from your Home Screen first (Share → Add to Home Screen)");
+      return;
+    }
+    if (!("Notification" in window)) {
+      flash("Notifications not supported on this browser");
+      return;
+    }
+    try {
+      const permission = await Notification.requestPermission();
+      renderNotifUI();
+      if (permission === "denied") flash("Notifications blocked — check iPhone Settings");
+    } catch (e) {
+      flash("Could not enable notifications: " + e.message);
+      console.warn("Notification error:", e);
+    }
   });
   document.getElementById("saveNotifBtn")?.addEventListener("click", saveNotifPrefs);
   document.getElementById("disableNotifBtn")?.addEventListener("click", disableNotifs);
