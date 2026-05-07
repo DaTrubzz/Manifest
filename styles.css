@@ -247,7 +247,7 @@ code.inline { background: var(--surface-2); padding: 1px 5px; border-radius: 4px
   overflow-y: auto; -webkit-overflow-scrolling: touch;
   height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 290px);
 }
-.timeline { position: relative; margin-left: 54px; margin-right: 12px; }
+.timeline { position: relative; margin-left: 54px; margin-right: 12px; margin-top: 14px; }
 .tl-hour {
   position: relative; height: 60px;
   border-top: 1px solid var(--border);
