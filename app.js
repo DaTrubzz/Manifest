@@ -62,10 +62,11 @@ function save() {
 }
 let state = load();
 
-// Schedule tab state (selectedDate uses todayKey which is hoisted)
+// Schedule tab state
 let selectedDate = todayKey();
 let _calYear  = new Date().getFullYear();
 let _calMonth = new Date().getMonth();
+let calView   = "week"; // "week" | "month"
 
 /* ---------- date helpers ---------- */
 function todayKey(d = new Date()) {
@@ -488,71 +489,87 @@ function renderHistory() {
   document.getElementById("daysLogged").textContent = logged;
 }
 
+/* ---------- calendar helpers ---------- */
+function getWeekDates(dateStr) {
+  const d = new Date(dateStr + "T12:00:00");
+  const sunday = new Date(d);
+  sunday.setDate(d.getDate() - d.getDay());
+  return Array.from({ length: 7 }, (_, i) => {
+    const day = new Date(sunday);
+    day.setDate(sunday.getDate() + i);
+    return day;
+  });
+}
+
+const DOW_ROW = `<div class="cal-dow">Su</div><div class="cal-dow">Mo</div><div class="cal-dow">Tu</div><div class="cal-dow">We</div><div class="cal-dow">Th</div><div class="cal-dow">Fr</div><div class="cal-dow">Sa</div>`;
+
+function calDayHTML(date, today) {
+  const key      = todayKey(date);
+  const comp     = dayCompletion(getDay(key));
+  const hasTasks = (state.tasks || []).some(t => t.date === key);
+  let cls = "cal-day";
+  if (key === today)                         cls += " is-today";
+  if (key === selectedDate && key !== today) cls += " is-selected";
+  const habitDot = comp > 0 ? `<div class="cal-dot ${comp === 4 ? "dot-full" : "dot-partial"}"></div>` : "";
+  const taskDot  = hasTasks ? `<div class="cal-dot dot-task"></div>` : "";
+  const dots     = (habitDot || taskDot) ? `<div class="cal-day-dots">${habitDot}${taskDot}</div>` : "";
+  return `<div class="${cls}" data-date="${key}"><span class="cal-day-num">${date.getDate()}</span>${dots}</div>`;
+}
+
 /* ---------- month calendar ---------- */
 function renderMonthCalendar() {
   const cal = document.getElementById("monthCal");
   if (!cal) return;
+  const today = todayKey();
 
-  const today        = todayKey();
-  const firstOfMonth = new Date(_calYear, _calMonth, 1);
-  const daysInMonth  = new Date(_calYear, _calMonth + 1, 0).getDate();
-  const startDow     = firstOfMonth.getDay(); // 0 = Sunday
-  const monthLabel   = firstOfMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  if (calView === "week") {
+    // ── Weekly view ──────────────────────────────────────────
+    const weekDates = getWeekDates(selectedDate);
+    cal.innerHTML = `
+      <div class="cal-grid">${DOW_ROW}${weekDates.map(d => calDayHTML(d, today)).join("")}</div>
+      <div class="cal-toggle"><button class="cal-toggle-btn" id="calToggle" title="Expand to month view">↓</button></div>`;
 
-  cal.innerHTML = `
-    <div class="month-nav">
-      <button class="month-nav-btn" id="calPrev">‹</button>
-      <span class="month-nav-title">${monthLabel}</span>
-      <button class="month-nav-btn" id="calNext">›</button>
-    </div>
-    <div class="cal-grid" id="calGrid">
-      <div class="cal-dow">Su</div><div class="cal-dow">Mo</div>
-      <div class="cal-dow">Tu</div><div class="cal-dow">We</div>
-      <div class="cal-dow">Th</div><div class="cal-dow">Fr</div>
-      <div class="cal-dow">Sa</div>
-    </div>`;
+  } else {
+    // ── Monthly view ─────────────────────────────────────────
+    const firstOfMonth = new Date(_calYear, _calMonth, 1);
+    const daysInMonth  = new Date(_calYear, _calMonth + 1, 0).getDate();
+    const startDow     = firstOfMonth.getDay();
+    const monthLabel   = firstOfMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    const blanks       = Array.from({ length: startDow }, () => "<div></div>").join("");
+    let dayCells       = blanks;
+    for (let d = 1; d <= daysInMonth; d++) dayCells += calDayHTML(new Date(_calYear, _calMonth, d), today);
 
-  const grid = cal.querySelector("#calGrid");
+    cal.innerHTML = `
+      <div class="month-nav">
+        <button class="month-nav-btn" id="calPrev">‹</button>
+        <span class="month-nav-title">${monthLabel}</span>
+        <button class="month-nav-btn" id="calNext">›</button>
+      </div>
+      <div class="cal-grid">${DOW_ROW}${dayCells}</div>
+      <div class="cal-toggle"><button class="cal-toggle-btn" id="calToggle" title="Collapse to week view">↑</button></div>`;
 
-  // Blank cells before the 1st
-  for (let i = 0; i < startDow; i++) grid.insertAdjacentHTML("beforeend", "<div></div>");
-
-  // Day cells
-  for (let d = 1; d <= daysInMonth; d++) {
-    const date     = new Date(_calYear, _calMonth, d);
-    const key      = todayKey(date);
-    const comp     = dayCompletion(getDay(key));
-    const hasTasks = (state.tasks || []).some(t => t.date === key);
-
-    let cls = "cal-day";
-    if (key === today)                      cls += " is-today";
-    if (key === selectedDate && key !== today) cls += " is-selected";
-
-    const habitDot = comp > 0
-      ? `<div class="cal-dot ${comp === 4 ? "dot-full" : "dot-partial"}"></div>` : "";
-    const taskDot  = hasTasks
-      ? `<div class="cal-dot dot-task"></div>` : "";
-    const dots     = (habitDot || taskDot)
-      ? `<div class="cal-day-dots">${habitDot}${taskDot}</div>` : "";
-
-    grid.insertAdjacentHTML("beforeend",
-      `<div class="${cls}" data-date="${key}"><span class="cal-day-num">${d}</span>${dots}</div>`);
+    cal.querySelector("#calPrev").addEventListener("click", () => {
+      _calMonth--; if (_calMonth < 0)  { _calMonth = 11; _calYear--; }
+      renderMonthCalendar();
+    });
+    cal.querySelector("#calNext").addEventListener("click", () => {
+      _calMonth++; if (_calMonth > 11) { _calMonth = 0;  _calYear++; }
+      renderMonthCalendar();
+    });
   }
 
-  // Prev / next month
-  cal.querySelector("#calPrev").addEventListener("click", () => {
-    _calMonth--; if (_calMonth < 0)  { _calMonth = 11; _calYear--; }
-    renderMonthCalendar();
-  });
-  cal.querySelector("#calNext").addEventListener("click", () => {
-    _calMonth++; if (_calMonth > 11) { _calMonth = 0;  _calYear++; }
+  // Toggle view
+  cal.querySelector("#calToggle").addEventListener("click", () => {
+    calView = calView === "week" ? "month" : "week";
     renderMonthCalendar();
   });
 
   // Day selection
-  grid.querySelectorAll(".cal-day[data-date]").forEach(cell => {
+  cal.querySelectorAll(".cal-day[data-date]").forEach(cell => {
     cell.addEventListener("click", () => {
       selectedDate = cell.dataset.date;
+      const d = new Date(selectedDate + "T12:00:00");
+      _calYear = d.getFullYear(); _calMonth = d.getMonth();
       renderMonthCalendar();
       renderTimeline();
     });
