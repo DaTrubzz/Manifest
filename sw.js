@@ -2,7 +2,7 @@
    Caches the app shell so the app works offline once visited.
    Bump CACHE_VERSION when you ship updates so clients refresh. */
 
-const CACHE_VERSION = "manifest-v3";
+const CACHE_VERSION = "manifest-v4";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -42,6 +42,19 @@ self.addEventListener("fetch", (event) => {
         caches.open(CACHE_VERSION).then(c => c.put(req, copy));
         return res;
       }).catch(() => caches.match(req).then(m => m || caches.match("./index.html")))
+    );
+    return;
+  }
+
+  // Network-first for JS and CSS so updates deploy immediately.
+  const url = new URL(req.url);
+  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
+    event.respondWith(
+      fetch(req).then(res => {
+        const copy = res.clone();
+        caches.open(CACHE_VERSION).then(c => c.put(req, copy));
+        return res;
+      }).catch(() => caches.match(req))
     );
     return;
   }
