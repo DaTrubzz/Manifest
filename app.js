@@ -1172,6 +1172,8 @@ if ("serviceWorker" in navigator) {
 
 bind();
 render();
+renderMonthCalendar();
+renderTimeline();
 maybeShowInstall();
 handleDeepLink();
 initAuth();
