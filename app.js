@@ -145,7 +145,8 @@ function bestStreakOverall() {
 =========================================================== */
 let _sb = null;
 let _pushTimer = null;
-let _pullTimer = null;
+let _pushing   = false;
+let _pullTimer  = null;
 let _session = null;
 
 function resolvedConfig() {
@@ -250,9 +251,10 @@ function schedulePush() {
 }
 
 async function pushNow() {
-  _pushTimer = null; // mark debounce as complete so pulls can resume
+  _pushTimer = null;
+  _pushing   = true;
   const sb = await getSupabase();
-  if (!sb || !_session) return;
+  if (!sb || !_session) { _pushing = false; return; }
   try {
     const payload = {
       user_id: _session.user.id,
@@ -273,13 +275,15 @@ async function pushNow() {
   } catch (e) {
     console.warn("push failed:", e);
     setSyncStatus("err", "Sync error — see console");
+  } finally {
+    _pushing = false;
   }
 }
 
 async function pullNow() {
   const sb = await getSupabase();
   if (!sb || !_session) return;
-  if (_pushTimer) return; // don't overwrite local changes mid-debounce
+  if (_pushTimer || _pushing) return; // don't overwrite local changes while saving
   try {
     setSyncStatus("busy", "Syncing…");
     const { data, error } = await sb.from("manifest_data")
