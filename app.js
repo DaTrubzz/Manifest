@@ -306,6 +306,8 @@ async function pushNow() {
     };
     const { error } = await sb.from("manifest_data").upsert(payload, { onConflict: "user_id" });
     if (error) throw error;
+    // Record push time so pullNow doesn't mistake the echo for older remote data
+    state.lastLocalUpdate = Date.now();
     setSyncStatus("ok", "Synced");
   } catch (e) {
     console.warn("push failed:", e);
@@ -329,10 +331,17 @@ async function pullNow() {
       await pushNow();
       return;
     }
+    // Skip if local is newer than remote (unpushed changes, or push just failed)
+    const remoteTs = new Date(data.updated_at).getTime();
+    if (state.lastLocalUpdate && state.lastLocalUpdate > remoteTs) {
+      setSyncStatus("ok", "Synced");
+      return;
+    }
     const remote = data.data || {};
-    state.days   = remote.days   || {};
-    state.tasks  = remote.tasks  || [];
-    state.habits = remote.habits || [];
+    state.days   = remote.days  || {};
+    state.tasks  = remote.tasks || [];
+    // Safety net: if remote predates the habits feature, don't blank local habits
+    state.habits = remote.habits !== undefined ? remote.habits : (state.habits || []);
     state.settings = {
       ...state.settings,
       ...(remote.settings || {}),
