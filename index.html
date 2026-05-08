@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
 <link rel="manifest" href="manifest.webmanifest" />
-<link rel="stylesheet" href="styles.css?v=28" />
+<link rel="stylesheet" href="styles.css?v=29" />
 </head>
 
 <body>
@@ -103,6 +103,7 @@
         <button class="sub-add-btn" data-cat="health" aria-label="Add task">+</button>
       </div>
       <div class="cards sub-section" id="sub-health-exercise">
+        <div id="itemlist-health-exercise"></div>
         <div class="card" id="cardWorkout">
           <div class="card-row">
             <div class="card-title">
@@ -126,6 +127,7 @@
       </div>
 
       <div class="cards sub-section" id="sub-health-sleep" style="display:none;">
+        <div id="itemlist-health-sleep"></div>
         <div class="card" id="cardSleep">
           <div class="card-row">
             <div class="card-title">
@@ -165,6 +167,7 @@
       </div>
 
       <div class="cards sub-section" id="sub-health-nutrition" style="display:none;">
+        <div id="itemlist-health-nutrition"></div>
         <div class="card" id="cardWater">
           <div class="card-row">
             <div class="card-title">
@@ -220,16 +223,16 @@
         <button class="sub-add-btn" data-cat="lifestyle" aria-label="Add task">+</button>
       </div>
       <div class="cards sub-section" id="sub-lifestyle-hobbies">
-        <div class="cat-empty">Hobbies habits coming soon.</div>
+        <div id="itemlist-lifestyle-hobbies"></div>
       </div>
       <div class="cards sub-section" id="sub-lifestyle-environment" style="display:none;">
-        <div class="cat-empty">Environment habits coming soon.</div>
+        <div id="itemlist-lifestyle-environment"></div>
       </div>
       <div class="cards sub-section" id="sub-lifestyle-social" style="display:none;">
-        <div class="cat-empty">Social habits coming soon.</div>
+        <div id="itemlist-lifestyle-social"></div>
       </div>
       <div class="cards sub-section" id="sub-lifestyle-chores" style="display:none;">
-        <div class="cat-empty">Chores habits coming soon.</div>
+        <div id="itemlist-lifestyle-chores"></div>
       </div>
     </div>
 
@@ -243,10 +246,10 @@
         <button class="sub-add-btn" data-cat="work" aria-label="Add task">+</button>
       </div>
       <div class="cards sub-section" id="sub-work-occupation">
-        <div class="cat-empty">Occupation habits coming soon.</div>
+        <div id="itemlist-work-occupation"></div>
       </div>
       <div class="cards sub-section" id="sub-work-education" style="display:none;">
-        <div class="cat-empty">Education habits coming soon.</div>
+        <div id="itemlist-work-education"></div>
       </div>
     </div>
 
@@ -438,15 +441,20 @@
 </div>
 
 
-<!-- Add task sheet -->
+<!-- Add task / habit sheet -->
 <div class="sheet-backdrop" id="taskSheet">
   <div class="sheet">
     <div class="sheet-header">
-      <div class="sheet-title">Add task</div>
+      <div class="sheet-title" id="taskSheetTitle">Add task</div>
       <button class="sheet-close" id="closeTaskSheet">Close</button>
     </div>
+    <!-- Task vs Habit toggle -->
+    <div class="seg" id="sheetTypeSeg" style="margin-bottom:4px;">
+      <button data-type="task" class="active">Task</button>
+      <button data-type="habit">Habit</button>
+    </div>
     <label class="field">
-      <span>Task name</span>
+      <span>Name</span>
       <input type="text" id="taskTitle" placeholder="e.g. Morning run" />
     </label>
     <label class="field">
@@ -485,6 +493,26 @@
         <option value="other">Other</option>
       </select>
     </label>
+    <!-- Habit-only: repeat options (hidden by default) -->
+    <div id="habitRepeatSection" style="display:none;">
+      <label class="field"><span>Repeat</span></label>
+      <div class="seg" id="repeatSeg">
+        <button data-repeat="daily" class="active">Daily</button>
+        <button data-repeat="weekly">Weekly</button>
+      </div>
+      <div id="weekdayPicker" style="display:none;margin-top:10px;">
+        <p style="margin:0 0 8px;font-size:13px;color:var(--text-2);">On these days</p>
+        <div class="day-picker">
+          <button class="day-pick-btn" data-day="0">Su</button>
+          <button class="day-pick-btn" data-day="1">Mo</button>
+          <button class="day-pick-btn" data-day="2">Tu</button>
+          <button class="day-pick-btn" data-day="3">We</button>
+          <button class="day-pick-btn" data-day="4">Th</button>
+          <button class="day-pick-btn" data-day="5">Fr</button>
+          <button class="day-pick-btn" data-day="6">Sa</button>
+        </div>
+      </div>
+    </div>
     <div class="btn-row">
       <button class="btn btn-primary btn-block" id="saveTaskBtn">Add task</button>
     </div>
@@ -500,6 +528,6 @@
   </div>
 </nav>
 
-<script src="app.js?v=28"></script>
+<script src="app.js?v=29"></script>
 </body>
 </html>

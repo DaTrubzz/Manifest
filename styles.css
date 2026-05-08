@@ -345,6 +345,46 @@ code.inline { background: var(--surface-2); padding: 1px 5px; border-radius: 4px
 }
 .sleep-block.in-bed { background: rgba(175,82,222,0.08); }
 
+/* ── Habit / task rows in sub-sections ────────────────────────────────────── */
+.item-section-title {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.6px; color: var(--text-3); margin: 12px 4px 6px; padding: 0;
+}
+.habit-row, .task-row {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 8px;
+  transition: opacity .15s;
+}
+.habit-row.done, .task-row.done { opacity: 0.5; }
+.habit-row.done .habit-name, .task-row.done .habit-name { text-decoration: line-through; }
+.habit-check {
+  flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%;
+  border: 2px solid var(--border); background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: white; padding: 0; cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.habit-check.checked { background: var(--accent); border-color: var(--accent); }
+.habit-info { flex: 1; min-width: 0; }
+.habit-name { font-size: 15px; font-weight: 500; color: var(--text); }
+.habit-meta { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+
+/* Habit blocks on timeline — dashed outline to distinguish from tasks */
+.task-block.habit-block { border: 2px dashed rgba(255,255,255,0.45); }
+
+/* Weekday picker in sheet */
+.day-picker { display: flex; gap: 6px; flex-wrap: wrap; }
+.day-pick-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--surface-2); border: none;
+  font-size: 12px; font-weight: 600; color: var(--text-2); cursor: pointer;
+  font-family: inherit;
+  display: flex; align-items: center; justify-content: center; padding: 0;
+  transition: background .15s, color .15s;
+}
+.day-pick-btn.active { background: var(--accent); color: white; }
+
 /* Sleep schedule card */
 .sleep-schedule-card { margin-top: 12px; }
 .sleep-sched-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }

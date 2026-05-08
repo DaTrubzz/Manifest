@@ -27,7 +27,8 @@ const DEFAULTS = {
     sleepSchedule: { bedtime: "", lightsOut: "", wakeTime: "" }
   },
   days: {},
-  tasks: []
+  tasks: [],
+  habits: []
 };
 
 const CAT_COLORS = {
@@ -50,6 +51,31 @@ const CAT_COLORS = {
   other:       "#6b7280"
 };
 
+/* ── Habit helpers ────────────────────────────────────────────────────────── */
+const SUB_TO_CAT = {
+  exercise: "health",   sleep: "health",    nutrition: "health",
+  hobbies:  "lifestyle",environment: "lifestyle", social: "lifestyle", chores: "lifestyle",
+  occupation: "work",   education: "work",  other: "other"
+};
+function fmtT12(timeStr) {
+  if (!timeStr) return "";
+  const [h, m] = timeStr.split(":").map(Number);
+  const dh = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${dh}:${String(m).padStart(2, "0")}${h < 12 ? "am" : "pm"}`;
+}
+function formatWeekDays(days) {
+  const names = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+  return (days||[]).slice().sort((a,b)=>a-b).map(d=>names[d]).join(", ") || "—";
+}
+function habitAppliesOnDate(habit, dateKey) {
+  if (habit.repeat === "daily") return true;
+  if (habit.repeat === "weekly") {
+    const d = new Date(dateKey + "T12:00:00");
+    return (habit.days || []).includes(d.getDay());
+  }
+  return false;
+}
+
 function load() {
   try {
     const raw = localStorage.getItem(KEY);
@@ -64,7 +90,8 @@ function load() {
         sync: { ...DEFAULTS.settings.sync, ...((parsed.settings || {}).sync || {}) },
         sleepSchedule: { ...DEFAULTS.settings.sleepSchedule, ...((parsed.settings || {}).sleepSchedule || {}) }
       },
-      tasks: parsed.tasks || []
+      tasks:  parsed.tasks  || [],
+      habits: parsed.habits || []
     };
   } catch (e) { return structuredClone(DEFAULTS); }
 }
@@ -80,6 +107,11 @@ let selectedDate = todayKey();
 let _calYear  = new Date().getFullYear();
 let _calMonth = new Date().getMonth();
 let calView   = "week"; // "week" | "month"
+
+// Add-item sheet state
+let _sheetType   = "task";  // "task" | "habit"
+let _habitRepeat = "daily"; // "daily" | "weekly"
+let _habitDays   = [];      // selected weekdays for weekly habits [0-6]
 
 /* ---------- date helpers ---------- */
 function todayKey(d = new Date()) {
@@ -266,8 +298,9 @@ async function pushNow() {
           installDismissed: state.settings.installDismissed,
           sleepSchedule: state.settings.sleepSchedule || {}
         },
-        days: state.days,
-        tasks: state.tasks || []
+        days:   state.days,
+        tasks:  state.tasks  || [],
+        habits: state.habits || []
       },
       updated_at: new Date().toISOString()
     };
@@ -297,8 +330,9 @@ async function pullNow() {
       return;
     }
     const remote = data.data || {};
-    state.days  = remote.days  || {};
-    state.tasks = remote.tasks || [];
+    state.days   = remote.days   || {};
+    state.tasks  = remote.tasks  || [];
+    state.habits = remote.habits || [];
     state.settings = {
       ...state.settings,
       ...(remote.settings || {}),
@@ -490,6 +524,7 @@ function render() {
   fsEl.textContent = fs + "d"; fsEl.classList.toggle("hot", fs >= 3);
 
   renderHistory();
+  renderSubSections();
 
   document.getElementById("setName").value = state.settings.name || "";
   document.getElementById("setWaterGoal").value = state.settings.waterGoal;
@@ -734,11 +769,64 @@ function renderTimeline(preserveScroll = false) {
     tl.appendChild(block);
   });
 
+  // Habit blocks
+  const habitsOnDay  = (state.habits || []).filter(h => habitAppliesOnDate(h, selectedDate) && h.time);
+  const dayHabitDone = (getDay(selectedDate).habitDone || {});
+
+  habitsOnDay.forEach(habit => {
+    const [th, tm] = (habit.time || "08:00").split(":").map(Number);
+    if (th < START_HOUR || th > END_HOUR) return;
+    const topPx    = (th - START_HOUR) * HOUR_PX + (tm / 60) * HOUR_PX;
+    const heightPx = Math.max(24, ((habit.duration || 30) / 60) * HOUR_PX);
+    const color    = CAT_COLORS[habit.sub] || CAT_COLORS[habit.cat] || CAT_COLORS.other;
+    const done     = !!dayHabitDone[habit.id];
+
+    const block = document.createElement("div");
+    block.className = "task-block habit-block" + (done ? " done" : "");
+    block.style.top    = topPx + "px";
+    block.style.height = heightPx + "px";
+    block.style.background = color;
+
+    const titleEl = document.createElement("div");
+    titleEl.className = "task-block-title";
+    titleEl.textContent = "↻ " + habit.title;
+    block.appendChild(titleEl);
+
+    if (heightPx >= 40) {
+      const endMin = th * 60 + tm + (habit.duration || 30);
+      const timeEl = document.createElement("div");
+      timeEl.className = "task-block-time";
+      timeEl.textContent = `${fmtT(th, tm)} – ${fmtT(Math.floor(endMin / 60) % 24, endMin % 60)}`;
+      block.appendChild(timeEl);
+    }
+
+    block.addEventListener("click", () => {
+      const hd = { ...(getDay(selectedDate).habitDone || {}) };
+      hd[habit.id] = !hd[habit.id];
+      setDay(selectedDate, { habitDone: hd });
+      renderTimeline(true);
+      renderSubSections();
+    });
+    let hPressTimer;
+    block.addEventListener("touchstart", () => {
+      hPressTimer = setTimeout(() => {
+        if (confirm(`Delete habit "${habit.title}"?\nThis removes it from all days.`)) {
+          state.habits = (state.habits || []).filter(h => h.id !== habit.id);
+          save(); renderTimeline(true); renderSubSections();
+        }
+      }, 700);
+    }, { passive: true });
+    block.addEventListener("touchend",  () => clearTimeout(hPressTimer));
+    block.addEventListener("touchmove", () => clearTimeout(hPressTimer), { passive: true });
+
+    tl.appendChild(block);
+  });
+
   // Empty state
-  if (tasks.length === 0) {
+  if (tasks.length === 0 && habitsOnDay.length === 0) {
     const empty = document.createElement("div");
     empty.className = "tl-empty";
-    empty.textContent = "No tasks for today. Tap + to add one.";
+    empty.textContent = "Nothing scheduled. Tap + to add.";
     tl.appendChild(empty);
   }
 
@@ -752,6 +840,119 @@ function renderTimeline(preserveScroll = false) {
       wrap.scrollTop = target;
     }
   }
+}
+
+/* ---------- sub-section rendering ---------- */
+const ALL_SUBS = [
+  ["health","exercise"], ["health","sleep"], ["health","nutrition"],
+  ["lifestyle","hobbies"], ["lifestyle","environment"], ["lifestyle","social"], ["lifestyle","chores"],
+  ["work","occupation"], ["work","education"]
+];
+
+function renderSubSections() {
+  const todayK = todayKey();
+
+  ALL_SUBS.forEach(([cat, sub]) => {
+    const listEl = document.getElementById(`itemlist-${cat}-${sub}`);
+    if (!listEl) return;
+
+    const habits   = (state.habits || []).filter(h => h.cat === cat && h.sub === sub);
+    const todayTasks = (state.tasks || []).filter(t => t.date === todayK && t.category === sub);
+
+    if (!habits.length && !todayTasks.length) {
+      listEl.innerHTML = `<div class="cat-empty">No habits or tasks yet.<br>Tap + to add one.</div>`;
+      return;
+    }
+
+    let html = "";
+
+    if (habits.length) {
+      html += `<p class="item-section-title">Habits</p>`;
+      habits.forEach(habit => {
+        const doneToday  = !!(getDay(todayK).habitDone || {})[habit.id];
+        const repeatLabel = habit.repeat === "daily" ? "Daily" : formatWeekDays(habit.days);
+        const timeLabel   = habit.time ? ` · ${fmtT12(habit.time)}` : "";
+        html += `
+          <div class="habit-row${doneToday ? " done" : ""}" data-habit-id="${habit.id}">
+            <button class="habit-check${doneToday ? " checked" : ""}" data-habit-id="${habit.id}" aria-label="Toggle">${doneToday ? "✓" : ""}</button>
+            <div class="habit-info">
+              <div class="habit-name">${habit.title}</div>
+              <div class="habit-meta">↻ ${repeatLabel}${timeLabel}</div>
+            </div>
+          </div>`;
+      });
+    }
+
+    if (todayTasks.length) {
+      html += `<p class="item-section-title">Today's Tasks</p>`;
+      todayTasks.forEach(task => {
+        html += `
+          <div class="task-row${task.done ? " done" : ""}" data-task-id="${task.id}">
+            <button class="habit-check${task.done ? " checked" : ""}" data-task-id="${task.id}" aria-label="Toggle">${task.done ? "✓" : ""}</button>
+            <div class="habit-info">
+              <div class="habit-name">${task.title}</div>
+              <div class="habit-meta">📅 Today · ${fmtT12(task.time || "08:00")} · ${task.duration || 30} min</div>
+            </div>
+          </div>`;
+      });
+    }
+
+    listEl.innerHTML = html;
+
+    // Habit toggle
+    listEl.querySelectorAll(".habit-check[data-habit-id]").forEach(btn => {
+      btn.addEventListener("click", e => {
+        e.stopPropagation();
+        const hd = { ...(getDay(todayK).habitDone || {}) };
+        hd[btn.dataset.habitId] = !hd[btn.dataset.habitId];
+        setDay(todayK, { habitDone: hd });
+        renderSubSections();
+        if (document.getElementById("cat-schedule")?.style.display !== "none") renderTimeline(true);
+      });
+    });
+
+    // Task toggle
+    listEl.querySelectorAll(".habit-check[data-task-id]").forEach(btn => {
+      btn.addEventListener("click", e => {
+        e.stopPropagation();
+        const task = (state.tasks || []).find(t => t.id === btn.dataset.taskId);
+        if (task) { task.done = !task.done; save(); renderSubSections(); }
+        if (document.getElementById("cat-schedule")?.style.display !== "none") renderTimeline(true);
+      });
+    });
+
+    // Habit long-press → delete
+    listEl.querySelectorAll(".habit-row[data-habit-id]").forEach(row => {
+      let t;
+      row.addEventListener("touchstart", () => {
+        t = setTimeout(() => {
+          const h = (state.habits || []).find(x => x.id === row.dataset.habitId);
+          if (confirm(`Delete habit "${h?.title}"?\nThis removes it from all days.`)) {
+            state.habits = (state.habits || []).filter(x => x.id !== row.dataset.habitId);
+            save(); renderSubSections(); renderTimeline(true);
+          }
+        }, 700);
+      }, { passive: true });
+      row.addEventListener("touchend",  () => clearTimeout(t));
+      row.addEventListener("touchmove", () => clearTimeout(t), { passive: true });
+    });
+
+    // Task long-press → delete
+    listEl.querySelectorAll(".task-row[data-task-id]").forEach(row => {
+      let t;
+      row.addEventListener("touchstart", () => {
+        t = setTimeout(() => {
+          const task = (state.tasks || []).find(x => x.id === row.dataset.taskId);
+          if (confirm(`Delete task "${task?.title}"?`)) {
+            state.tasks = (state.tasks || []).filter(x => x.id !== row.dataset.taskId);
+            save(); renderSubSections(); renderTimeline(true);
+          }
+        }, 700);
+      }, { passive: true });
+      row.addEventListener("touchend",  () => clearTimeout(t));
+      row.addEventListener("touchmove", () => clearTimeout(t), { passive: true });
+    });
+  });
 }
 
 /* ---------- interactions ---------- */
@@ -820,17 +1021,69 @@ function bind() {
     flash("Sleep schedule saved");
   });
 
-  // task sheet
+  // task / habit sheet
   const taskSheet = document.getElementById("taskSheet");
-  function openTaskSheet(defaultCat) {
+
+  function openTaskSheet(defaultCat, forceType) {
+    // Reset type
+    _sheetType = forceType || "task";
+    _habitRepeat = "daily";
+    _habitDays = [];
+    document.querySelectorAll("#sheetTypeSeg button").forEach(b =>
+      b.classList.toggle("active", b.dataset.type === _sheetType));
+    document.getElementById("taskSheetTitle").textContent = _sheetType === "habit" ? "Add habit" : "Add task";
+    document.getElementById("saveTaskBtn").textContent    = _sheetType === "habit" ? "Add habit" : "Add task";
+    document.getElementById("habitRepeatSection").style.display = _sheetType === "habit" ? "" : "none";
+    document.getElementById("weekdayPicker").style.display = "none";
+    document.querySelectorAll("#repeatSeg button").forEach(b =>
+      b.classList.toggle("active", b.dataset.repeat === "daily"));
+    document.querySelectorAll(".day-pick-btn").forEach(b => b.classList.remove("active"));
+    // Reset fields
     const n = new Date();
     const hh = String(n.getHours()).padStart(2, "0");
     const mm = String(Math.round(n.getMinutes() / 15) * 15 % 60).padStart(2, "0");
-    document.getElementById("taskTime").value = `${hh}:${mm}`;
+    document.getElementById("taskTime").value  = `${hh}:${mm}`;
     document.getElementById("taskTitle").value = "";
     if (defaultCat) document.getElementById("taskCategory").value = defaultCat;
     taskSheet.classList.add("open");
   }
+
+  // Type toggle (Task / Habit)
+  document.querySelectorAll("#sheetTypeSeg button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      _sheetType = btn.dataset.type;
+      document.querySelectorAll("#sheetTypeSeg button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("taskSheetTitle").textContent = _sheetType === "habit" ? "Add habit" : "Add task";
+      document.getElementById("saveTaskBtn").textContent    = _sheetType === "habit" ? "Add habit" : "Add task";
+      document.getElementById("habitRepeatSection").style.display = _sheetType === "habit" ? "" : "none";
+    });
+  });
+
+  // Repeat toggle (Daily / Weekly)
+  document.querySelectorAll("#repeatSeg button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      _habitRepeat = btn.dataset.repeat;
+      document.querySelectorAll("#repeatSeg button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("weekdayPicker").style.display = _habitRepeat === "weekly" ? "" : "none";
+    });
+  });
+
+  // Weekday picker
+  document.querySelectorAll(".day-pick-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const day = parseInt(btn.dataset.day);
+      if (_habitDays.includes(day)) {
+        _habitDays = _habitDays.filter(d => d !== day);
+        btn.classList.remove("active");
+      } else {
+        _habitDays.push(day);
+        btn.classList.add("active");
+      }
+    });
+  });
+
   document.getElementById("addTaskBtn").addEventListener("click", () => openTaskSheet(null));
 
   // sub-section + buttons — default to whichever sub-tab is active
@@ -844,17 +1097,34 @@ function bind() {
   });
   document.getElementById("closeTaskSheet").addEventListener("click", () => taskSheet.classList.remove("open"));
   taskSheet.addEventListener("click", (e) => { if (e.target === taskSheet) taskSheet.classList.remove("open"); });
+
   document.getElementById("saveTaskBtn").addEventListener("click", () => {
     const title    = document.getElementById("taskTitle").value.trim();
     const time     = document.getElementById("taskTime").value;
     const duration = parseInt(document.getElementById("taskDuration").value) || 30;
     const category = document.getElementById("taskCategory").value;
-    if (!title) { flash("Enter a task name"); return; }
+    if (!title) { flash("Enter a name"); return; }
     if (!time)  { flash("Pick a time"); return; }
-    if (!state.tasks) state.tasks = [];
-    state.tasks.push({ id: Date.now().toString(36), title, date: selectedDate, time, duration, category, done: false });
+
+    if (_sheetType === "habit") {
+      if (_habitRepeat === "weekly" && _habitDays.length === 0) { flash("Pick at least one day"); return; }
+      const cat = SUB_TO_CAT[category] || "other";
+      if (!state.habits) state.habits = [];
+      state.habits.push({
+        id: Date.now().toString(36), title,
+        cat, sub: category, time, duration,
+        repeat: _habitRepeat,
+        days: _habitRepeat === "weekly" ? [..._habitDays] : [],
+        createdAt: Date.now()
+      });
+    } else {
+      if (!state.tasks) state.tasks = [];
+      state.tasks.push({ id: Date.now().toString(36), title, date: selectedDate, time, duration, category, done: false });
+    }
+
     save();
     taskSheet.classList.remove("open");
+    renderSubSections();
     renderTimeline();
   });
 
