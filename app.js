@@ -264,8 +264,10 @@ async function pushNow() {
           waterGoal: state.settings.waterGoal,
           sleepGoal: state.settings.sleepGoal,
           installDismissed: state.settings.installDismissed,
+          sleepSchedule: state.settings.sleepSchedule || {}
         },
-        days: state.days
+        days: state.days,
+        tasks: state.tasks || []
       },
       updated_at: new Date().toISOString()
     };
@@ -295,15 +297,22 @@ async function pullNow() {
       return;
     }
     const remote = data.data || {};
-    state.days = remote.days || {};
+    state.days  = remote.days  || {};
+    state.tasks = remote.tasks || [];
     state.settings = {
       ...state.settings,
       ...(remote.settings || {}),
-      sync: state.settings.sync // keep local sync config
+      sync: state.settings.sync, // keep local sync config
+      sleepSchedule: remote.settings?.sleepSchedule || state.settings.sleepSchedule
     };
     state.lastLocalUpdate = new Date(data.updated_at).getTime();
     localStorage.setItem(KEY, JSON.stringify(state));
     render();
+    // Refresh timeline if it's currently visible
+    if (document.getElementById("cat-schedule")?.style.display !== "none") {
+      renderMonthCalendar();
+      renderTimeline(true);
+    }
     setSyncStatus("ok", "Synced");
   } catch (e) {
     console.warn("pull failed:", e);
