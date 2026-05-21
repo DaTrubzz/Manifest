@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
 <link rel="manifest" href="manifest.webmanifest" />
-<link rel="stylesheet" href="styles.css?v=32" />
+<link rel="stylesheet" href="styles.css?v=33" />
 </head>
 
 <body>
@@ -472,14 +472,10 @@
     </label>
     <label class="field">
       <span>Duration</span>
-      <select id="taskDuration">
-        <option value="15">15 min</option>
-        <option value="30" selected>30 min</option>
-        <option value="45">45 min</option>
-        <option value="60">1 hour</option>
-        <option value="90">1.5 hours</option>
-        <option value="120">2 hours</option>
-      </select>
+      <div class="duration-picker">
+        <select id="durationHours"></select>
+        <select id="durationMins"></select>
+      </div>
     </label>
     <label class="field">
       <span>Category</span>
@@ -539,6 +535,6 @@
   </div>
 </nav>
 
-<script src="app.js?v=32"></script>
+<script src="app.js?v=33"></script>
 </body>
 </html>

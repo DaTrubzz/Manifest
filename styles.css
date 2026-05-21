@@ -221,6 +221,10 @@ h2.section { font-size: 13px; text-transform: uppercase; letter-spacing: 0.6px; 
 .help-text { font-size: 12px; color: var(--text-3); margin-top: 6px; line-height: 1.4; }
 code.inline { background: var(--surface-2); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
 
+/* Duration picker — two side-by-side selects */
+.duration-picker { display: flex; gap: 8px; }
+.duration-picker select { flex: 1; }
+
 /* ── Auth overlay ─────────────────────────────────────────────────────── */
 .auth-overlay {
   position: fixed; inset: 0; background: var(--bg);

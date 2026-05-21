@@ -1068,6 +1068,20 @@ function renderSubSections() {
 
 /* ---------- interactions ---------- */
 function bind() {
+  // Populate duration pickers (hours 0–12, minutes 0–59)
+  const durH = document.getElementById("durationHours");
+  const durM = document.getElementById("durationMins");
+  for (let h = 0; h <= 12; h++) {
+    const o = document.createElement("option");
+    o.value = h; o.textContent = `${h} hr`;
+    durH.appendChild(o);
+  }
+  for (let m = 0; m <= 59; m++) {
+    const o = document.createElement("option");
+    o.value = m; o.textContent = `${String(m).padStart(2,"0")} min`;
+    durM.appendChild(o);
+  }
+
   document.querySelectorAll("#workoutTypes button[data-type]").forEach(btn => {
     btn.addEventListener("click", () => {
       const cur = (getDay(todayKey()).workout || {}).type;
@@ -1153,8 +1167,10 @@ function bind() {
     const n = new Date();
     const hh = String(n.getHours()).padStart(2, "0");
     const mm = String(Math.round(n.getMinutes() / 15) * 15 % 60).padStart(2, "0");
-    document.getElementById("taskTime").value  = `${hh}:${mm}`;
-    document.getElementById("taskTitle").value = "";
+    document.getElementById("taskTime").value     = `${hh}:${mm}`;
+    document.getElementById("taskTitle").value    = "";
+    document.getElementById("durationHours").value = "0";
+    document.getElementById("durationMins").value  = "30";
     if (defaultCat) document.getElementById("taskCategory").value = defaultCat;
     taskSheet.classList.add("open");
   }
@@ -1214,10 +1230,12 @@ function bind() {
   document.getElementById("saveTaskBtn").addEventListener("click", () => {
     const title    = document.getElementById("taskTitle").value.trim();
     const time     = document.getElementById("taskTime").value;
-    const duration = parseInt(document.getElementById("taskDuration").value) || 30;
+    const duration = parseInt(document.getElementById("durationHours").value||0) * 60
+                   + parseInt(document.getElementById("durationMins").value||0);
     const category = document.getElementById("taskCategory").value;
-    if (!title) { flash("Enter a name"); return; }
-    if (!time)  { flash("Pick a time"); return; }
+    if (!title)        { flash("Enter a name"); return; }
+    if (!time)         { flash("Pick a time"); return; }
+    if (duration === 0){ flash("Set a duration"); return; }
 
     if (_sheetType === "habit") {
       const needsDays = _habitRepeat === "weekly" || _habitRepeat === "biweekly";
