@@ -67,11 +67,24 @@ function formatWeekDays(days) {
   const names = ["Su","Mo","Tu","We","Th","Fr","Sa"];
   return (days||[]).slice().sort((a,b)=>a-b).map(d=>names[d]).join(", ") || "—";
 }
+function weekIndex(dateKey) {
+  // Whole weeks elapsed since a fixed Monday epoch — used for biweekly parity
+  const d = new Date(dateKey + "T12:00:00");
+  const epoch = new Date("1970-01-05T12:00:00Z"); // Jan 5 1970 was a Monday
+  return Math.floor((d - epoch) / (7 * 24 * 60 * 60 * 1000));
+}
 function habitAppliesOnDate(habit, dateKey) {
   if (habit.repeat === "daily") return true;
   if (habit.repeat === "weekly") {
     const d = new Date(dateKey + "T12:00:00");
     return (habit.days || []).includes(d.getDay());
+  }
+  if (habit.repeat === "biweekly") {
+    const d = new Date(dateKey + "T12:00:00");
+    if (!(habit.days || []).includes(d.getDay())) return false;
+    // Same week-parity as the week the habit was created
+    const startKey = habit.startDate || todayKey(new Date(habit.createdAt || Date.now()));
+    return weekIndex(dateKey) % 2 === weekIndex(startKey) % 2;
   }
   return false;
 }
@@ -879,7 +892,9 @@ function renderSubSections() {
       html += `<p class="item-section-title">Habits</p>`;
       habits.forEach(habit => {
         const doneToday  = !!(getDay(todayK).habitDone || {})[habit.id];
-        const repeatLabel = habit.repeat === "daily" ? "Daily" : formatWeekDays(habit.days);
+        const repeatLabel = habit.repeat === "daily"     ? "Daily"
+                         : habit.repeat === "biweekly"  ? `Every other week · ${formatWeekDays(habit.days)}`
+                         : formatWeekDays(habit.days);
         const timeLabel   = habit.time ? ` · ${fmtT12(habit.time)}` : "";
         html += `
           <div class="habit-row${doneToday ? " done" : ""}" data-habit-id="${habit.id}">
@@ -1075,7 +1090,8 @@ function bind() {
       _habitRepeat = btn.dataset.repeat;
       document.querySelectorAll("#repeatSeg button").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-      document.getElementById("weekdayPicker").style.display = _habitRepeat === "weekly" ? "" : "none";
+      document.getElementById("weekdayPicker").style.display =
+      (_habitRepeat === "weekly" || _habitRepeat === "biweekly") ? "" : "none";
     });
   });
 
@@ -1116,14 +1132,16 @@ function bind() {
     if (!time)  { flash("Pick a time"); return; }
 
     if (_sheetType === "habit") {
-      if (_habitRepeat === "weekly" && _habitDays.length === 0) { flash("Pick at least one day"); return; }
+      const needsDays = _habitRepeat === "weekly" || _habitRepeat === "biweekly";
+      if (needsDays && _habitDays.length === 0) { flash("Pick at least one day"); return; }
       const cat = SUB_TO_CAT[category] || "other";
       if (!state.habits) state.habits = [];
       state.habits.push({
         id: Date.now().toString(36), title,
         cat, sub: category, time, duration,
         repeat: _habitRepeat,
-        days: _habitRepeat === "weekly" ? [..._habitDays] : [],
+        days: needsDays ? [..._habitDays] : [],
+        startDate: selectedDate,   // anchor for biweekly week-parity
         createdAt: Date.now()
       });
     } else {
