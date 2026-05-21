@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
 <link rel="manifest" href="manifest.webmanifest" />
-<link rel="stylesheet" href="styles.css?v=31" />
+<link rel="stylesheet" href="styles.css?v=32" />
 </head>
 
 <body>
@@ -79,6 +79,15 @@
       <div class="date" id="todayDate"></div>
       <div id="syncPill" class="sync-pill" style="display:none;"><span class="dot"></span><span id="syncStatus">Sync off</span></div>
     </header>
+
+    <!-- To-Do section -->
+    <div id="cat-todo" style="display:none;">
+      <div class="sched-bar">
+        <span class="sched-date" id="todoPendingCount"></span>
+        <button class="btn-add-task" id="addTodoBtn" aria-label="Add task">+</button>
+      </div>
+      <div id="todoList"></div>
+    </div>
 
     <!-- Schedule section -->
     <div id="cat-schedule">
@@ -522,6 +531,7 @@
 
 <nav class="cat-bar">
   <div class="cat-bar-inner">
+    <button class="cat-btn" data-cat="todo"><span class="cat-icon">📋</span>Tasks</button>
     <button class="cat-btn active" data-cat="schedule"><span class="cat-icon">📅</span>Schedule</button>
     <button class="cat-btn" data-cat="health"><span class="cat-icon">❤️</span>Health</button>
     <button class="cat-btn" data-cat="lifestyle"><span class="cat-icon">✨</span>Lifestyle</button>
@@ -529,6 +539,6 @@
   </div>
 </nav>
 
-<script src="app.js?v=31"></script>
+<script src="app.js?v=32"></script>
 </body>
 </html>

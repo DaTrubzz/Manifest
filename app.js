@@ -57,6 +57,10 @@ const SUB_TO_CAT = {
   hobbies:  "lifestyle",environment: "lifestyle", social: "lifestyle", chores: "lifestyle",
   occupation: "work",   education: "work",  other: "other"
 };
+function fmtShortDate(dateKey) {
+  const d = new Date(dateKey + "T12:00:00");
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
 function fmtT12(timeStr) {
   if (!timeStr) return "";
   const [h, m] = timeStr.split(":").map(Number);
@@ -864,6 +868,89 @@ function renderTimeline(preserveScroll = false) {
   }
 }
 
+/* ---------- to-do list ---------- */
+function renderTodo() {
+  const listEl = document.getElementById("todoList");
+  if (!listEl) return;
+
+  const today    = todayKey();
+  const allTasks = state.tasks || [];
+
+  const pending = allTasks
+    .filter(t => !t.done)
+    .sort((a, b) => a.date !== b.date ? (a.date < b.date ? -1 : 1) : (a.time||"").localeCompare(b.time||""));
+  const done = allTasks
+    .filter(t => t.done)
+    .sort((a, b) => b.date !== a.date ? (b.date < a.date ? -1 : 1) : 0);
+
+  const countEl = document.getElementById("todoPendingCount");
+  if (countEl) {
+    countEl.textContent = pending.length === 0 ? "All done  ✓" : `${pending.length} pending`;
+    countEl.style.color = pending.length === 0 ? "var(--accent)" : "var(--text-2)";
+  }
+
+  const rowHTML = task => {
+    const color    = CAT_COLORS[task.category] || CAT_COLORS.other;
+    const overdue  = !task.done && task.date < today;
+    const dateLabel = task.date === today ? "Today"
+                    : overdue             ? `Overdue · ${fmtShortDate(task.date)}`
+                    : fmtShortDate(task.date);
+    const timeLabel = task.time ? ` · ${fmtT12(task.time)}` : "";
+    return `
+      <div class="habit-row todo-row${task.done ? " done" : ""}${overdue ? " overdue" : ""}" data-task-id="${task.id}">
+        <button class="habit-check${task.done ? " checked" : ""}" data-task-id="${task.id}" aria-label="Toggle">${task.done ? "✓" : ""}</button>
+        <div class="habit-info">
+          <div class="habit-name">${task.title}</div>
+          <div class="habit-meta">
+            <span class="cat-dot-inline" style="background:${color}"></span>${task.category}${timeLabel} · ${dateLabel}
+          </div>
+        </div>
+      </div>`;
+  };
+
+  let html = "";
+  if (pending.length === 0 && done.length === 0) {
+    html = '<div class="cat-empty">No tasks yet.<br>Tap + to add one.</div>';
+  } else {
+    pending.forEach(t => { html += rowHTML(t); });
+    if (done.length) {
+      html += `<p class="item-section-title">Completed</p>`;
+      done.forEach(t => { html += rowHTML(t); });
+    }
+  }
+  listEl.innerHTML = html;
+
+  // Toggle done
+  listEl.querySelectorAll(".habit-check[data-task-id]").forEach(btn => {
+    btn.addEventListener("click", e => {
+      e.stopPropagation();
+      const task = (state.tasks||[]).find(t => t.id === btn.dataset.taskId);
+      if (!task) return;
+      task.done = !task.done;
+      save();
+      renderTodo();
+      renderSubSections();
+      if (document.getElementById("cat-schedule")?.style.display !== "none") renderTimeline(true);
+    });
+  });
+
+  // Long-press → delete
+  listEl.querySelectorAll(".todo-row[data-task-id]").forEach(row => {
+    let timer;
+    row.addEventListener("touchstart", () => {
+      timer = setTimeout(() => {
+        const task = (state.tasks||[]).find(t => t.id === row.dataset.taskId);
+        if (confirm(`Delete "${task?.title}"?`)) {
+          state.tasks = (state.tasks||[]).filter(t => t.id !== row.dataset.taskId);
+          save(); renderTodo(); renderSubSections();
+        }
+      }, 700);
+    }, { passive: true });
+    row.addEventListener("touchend",  () => clearTimeout(timer));
+    row.addEventListener("touchmove", () => clearTimeout(timer), { passive: true });
+  });
+}
+
 /* ---------- sub-section rendering ---------- */
 const ALL_SUBS = [
   ["health","exercise"], ["health","sleep"], ["health","nutrition"],
@@ -1110,6 +1197,7 @@ function bind() {
   });
 
   document.getElementById("addTaskBtn").addEventListener("click", () => openTaskSheet(null));
+  document.getElementById("addTodoBtn").addEventListener("click",  () => openTaskSheet(null));
 
   // sub-section + buttons — default to whichever sub-tab is active
   document.querySelectorAll(".sub-add-btn").forEach(btn => {
@@ -1167,6 +1255,7 @@ function bind() {
       const subtabs = document.getElementById(`subtabs-${cat}`);
       if (subtabs) subtabs.style.display = "";
       if (cat === "schedule") { renderMonthCalendar(); renderTimeline(); }
+      if (cat === "todo")     { renderTodo(); }
     });
   });
 
